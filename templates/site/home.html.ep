@@ -1,0 +1,23 @@
+% layout 'default';
+<h2>Available probes</h2>
+
+<div id="probes">
+  <% if (scalar(@{$probes})) { %>
+  <ul>
+    <% for my $p (@{$probes}) { %>
+    <li><a href="<%== url_for 'draw_list', nsp => $p->{schema} %>" title="<%= $p->{schema} %>"><%= $p->{probe} %></a> <%= $p->{desc} %></li>
+    <% } %>
+  </ul>
+  <% } else { %>
+  <p>No probes found</p>
+  <% } %>
+</div>
+
+<h2>Upload a probe archive</h2>
+
+<div id="upload">
+  <%= form_for upload => (enctype => 'multipart/form-data', method => 'POST') => begin %>
+    <%= file_field 'example' %>
+    <%= submit_button 'Upload' %>
+  <% end %>
+</div>

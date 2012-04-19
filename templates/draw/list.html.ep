@@ -1,0 +1,38 @@
+% layout 'default';
+<h2>Available graphs</h2>
+
+<div id="graphs">
+  <% if (scalar(@{$graphs})) { %>
+  <%= form_for draw_list_save => (method => 'POST') => begin %>
+  <table>
+    <tr>
+      <th>&nbsp;</th>
+      <th>Name</th>
+      <th>Description</th>
+      <th>&nbsp;</th>
+    </tr>
+    <% for my $g (@{$graphs}) { %>
+    <tr>
+      <td>
+	<input type="checkbox" name="selection" value="<%= $g->{id} %>" <% if ($g->{saved}) { %>checked<% } %> />
+      </td>
+      <td>
+	<%= link_to draw_edit => {nsp => $nsp, id => $g->{id}} => begin %><%= $g->{name} %><% end %>
+      </td>
+      <td>
+	<%= $g->{desc} %>
+      </td>
+      <td>
+	<%= link_to draw_edit => {nsp => $nsp, id => $g->{id}} => begin %>Edit<% end %>
+      </td>
+    </tr>
+    <% } %>
+  </table>
+  <%= submit_button 'Save selection', name => 'dest', value => 'update' %>
+  <%= submit_button 'Show selection', name => 'dest', value => 'show' %>
+  <%= submit_button 'New graphs', name => 'dest', value => 'new' %>
+  <% end %>
+  <% } else { %>
+  <p>No graphs found</p>
+  <% } %>
+</div>

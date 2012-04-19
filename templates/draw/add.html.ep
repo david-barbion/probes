@@ -1,0 +1,45 @@
+% layout 'default';
+<h2>Add a new graph</h2>
+
+<script type="text/javascript" src="<%= url_for '/' %>js/auditools.js"></script>
+
+<div id="presets">Presets: <%= select_field preset => $presets %></div>
+
+<%= form_for draw_add_save => (method => 'POST') => begin %>
+<%= hidden_field nsp => $nsp %>
+<div id="form">
+  <label for="query">Query: 
+    <textarea id="query" rows="5" cols="80" name="query"></textarea>
+  </label>
+  <div>
+    <label for="graph-line"><input id="graph-line" type="radio" name="graph-type" value="lines" checked="checked" /> Lines</label>
+    <label for="graph-points"><input id="graph-points" type="radio" name="graph-type" value="points" /> Points</label>
+    <label for="graph-pie"><input id="graph-pie" type="radio" name="graph-type" value="pie" /> Pie</label>
+  </div>
+  <label for="series-width">Series width: <input id="series-width" type="text" name="series-width" size="3" value="1" /></label>
+  <label for="stacked"><input id="stacked" type="checkbox" name="stacked" /> Stacked ? </label>
+
+  <label for="filled"><input id="filled" type="checkbox" name="filled" /> Filled ? </label>
+  <label for="show-legend"><input id="show-legend" type="checkbox" name="show-legend" /> Show legend ? </label>
+  <label for="legend-cols">Legend cols: <input id="legend-cols" type="text" name="legend-cols" size="3" value="1" /></label>
+  <input type="button" id="add_graph" name="add_graph" value="Graph" />
+</div>
+
+<div id="graph_box" style="width:700px;height:300px;">
+	<div class="graph" id="graph_area"></div>
+</div>
+
+<div><ul id="legend"></ul></div>
+
+<div style="clear: both;">&nbsp;</div>
+
+<div id="save" style="border-top: 1px solid #666;">
+  <table>
+    <tr><td>Graph name:</td><td><input type="text" name="saved_name" /></td></tr>
+    <tr><td>Description:</td><td><textarea rows="3" name="saved_desc"></textarea></td></tr>
+    <tr><td>Make graph available for probe:</td><td><%= select_field saved_probe => $probes %></td></tr>
+  </table>
+  <%= submit_button 'Save', name => 'save' %>
+</div>
+
+<% end %>

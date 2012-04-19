@@ -1,0 +1,45 @@
+% layout 'default';
+<h2><%= $nsp %></h2>
+
+<div id="nav">
+  <ul>
+    <li><%= link_to draw_list => { nsp => $nsp } => begin %>Back to list<% end %></li>
+    <li><%= link_to draw_add => { nsp => $nsp } => begin %>New graph<% end %></li>
+  </ul>
+</div>
+
+<% if (scalar(@{$graphs})) { %>
+<%   for my $g (@{$graphs}) { %>
+<h3><%= $g->{desc} %></h3>
+
+<div id="graph<%= $g->{id} %>" style="width:700px;height:300px;"></div>
+<div id="legend_<%= $g->{id} %>"></div>
+
+<script type="text/javascript">
+  var options<%= $g->{id} %> = {
+         legend: { show: true, container: $('#legend_<%= $g->{id} %>') },
+         xaxis: { mode: 'time' },
+         selection: { mode: "x", color: "#444" }
+      };
+
+  $(document).ready(function(){
+    $.plot($('#graph<%= $g->{id} %>'),<%== $g->{data} %>, options<%= $g->{id} %>);
+
+    
+  });                
+</script>
+<%   } %>
+<% } else { %>
+<p>No graphs found</p>
+<% } %>
+
+<%#
+TODO:
+ - liens de navigation
+ - selection:
+   - range
+   - series
+ - boutons edit et remove
+ - checkbox devant chaque graph pour maj la selection
+ - liste select de graphs à ajouter en bas
+%>

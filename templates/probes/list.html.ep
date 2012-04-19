@@ -1,0 +1,36 @@
+% layout 'default';
+<h2>Available probes</h2>
+
+<div id="probes">
+  <% if (scalar(@{$probes})) { %>
+  <table>
+    <tr>
+      <th>Probe</th>
+      <th>Description</th>
+      <th>Minimum version</th>
+      <th>&nbsp;</th>
+    </tr>
+    <% for my $p (@{$probes}) { %>
+    <tr>
+      <td>
+	<a href="<%== url_for '/probes/'.$p->{id} %>" title="Show">
+	  <%= $p->{probe_name} %>
+	</a>
+      </td>
+      <td>
+	<%= $p->{description} %>
+      </td>
+      <td>
+	<%= $p->{version} %>
+      </td>
+      <td>
+	<a href="<%== url_for '/probes/'.$p->{id}.'/edit' %>" title="Edit">Edit</a>
+	<a href="<%== url_for '/probes/'.$p->{id}.'/delete' %>" title="Delete">Delete</a>
+      </td>
+    </tr>
+    <% } %>
+  </table>
+  <% } else { %>
+  <p>No probes found</p>
+  <% } %>
+</div>

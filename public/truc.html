@@ -1,0 +1,34 @@
+<script type="text/javascript" src="/js/jquery.js"></script>
+
+<script type="text/javascript">
+(function($)
+{
+    $.vari = "$.vari";
+    $.fn.vari = "$.fn.vari";
+
+    // $.fn is the object we add our custom functions to
+    $.fn.DoSomethingLocal = function()
+    {
+        return this.each(function()
+        {
+            alert(this.vari);    // would output `undefined`
+            alert($(this).vari); // would output `$.fn.vari`
+        });
+    };
+})(jQuery);
+
+// $ is the main jQuery object, we can attach a global function to it
+$.DoSomethingGlobal = function()
+{
+    alert("Do Something Globally, where `this.vari` = " + this.vari);
+};
+
+$(document).ready(function()
+{
+    $("div#test a").click().DoSomethingLocal();
+//    $.DoSomethingGlobal();
+});
+</script>
+
+<div id="test"><a href="#">a in test</a></div>
+<a href="#">a outside test</a>

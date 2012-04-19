@@ -1,0 +1,20 @@
+% layout 'default';
+<h2><%= @{$probe}[0] %></h2>
+
+<div id="probe">
+  <% if (scalar(@{$probe})) { %>
+  <ul>
+    <li>Name: <%= @{$probe}[0] %></li>
+    <li>Description: <%= @{$probe}[1] %></li>
+    <li>Minimum version: <%= @{$probe}[2] %></li>
+    <li>Request: <pre><%= @{$probe}[3] %></pre></li>
+  </ul>
+  <% } else { %>
+  <p>Unknown probe</p>
+  <% } %>
+</div>
+
+<div>
+  <a href="<%== url_for "/probes/${id}/edit" %>" title="Edit">Edit</a>
+  <a href="<%== url_for "/probes/${id}/delete" %>" title="Delete">Delete</a>
+</div>
