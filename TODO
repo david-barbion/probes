@@ -1,3 +1,14 @@
+everything:
+- check db error
+- add messages where needed
+- rework CSS for sub menus
+- add breadcrumbs ? or page tree path ?
+
+draw show
+- add interaction:
+  * interval selection
+  * show/hide series ?
+
 draw edit
 - add a session var to redirect to proper source page (list or show)
 - merge edit and save_edit, use taghelper for the options
