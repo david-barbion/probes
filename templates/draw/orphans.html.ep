@@ -1,0 +1,31 @@
+% layout 'default';
+% my @graphs = @{stash 'graphs'};
+<h2>Discard graphs</h2>
+
+<div>
+  <%= form_for draw_orphans => (method => 'POST') => begin %>
+% foreach my $g (@graphs) {
+%     my %graph = %{$g};
+  <div>
+    <h3><%= $graph{name} %></h3>
+    <p><%= $graph{desc} %></p>
+    <p><pre><%= $graph{query} %></pre></p>
+    <ul>
+      <li>
+	<%= radio_button qq{action$graph{id}} => 'remove', id => qq{del$graph{id}}, checked => 'checked' %>
+	<label for="del<%= $graph{id} %>">Remove this custom graph</label>
+      </li>
+      <li>
+	<%= radio_button qq{action$graph{id}} => 'link', id => qq{link$graph{id}} %>
+	<label for="link<%= $graph{id} %>">Keep the custom graph for probe:</label>
+	<%= select_field qq{probe$graph{id}} => $probes %>
+      </li>
+    </ul>
+  </div>
+% }
+
+  <div id="save">
+    <p><%= submit_button 'Save', name => 'save' %><%= submit_button 'Cancel', name => 'cancel' %></p>
+  </div>
+  <% end %>
+</div>

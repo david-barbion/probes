@@ -1,4 +1,6 @@
 % layout 'default';
+% my %form = %{$form_data};
+% my %form_err = (defined stash 'form_err') ? %{stash('form_err')} : ( );
 <h2>Edit a graph</h2>
 
 <script type="text/javascript" src="<%= url_for '/' %>js/auditools.js"></script>
@@ -6,46 +8,47 @@
 
 <%= form_for draw_edit_save => (method => 'POST') => begin %>
   <%= hidden_field nsp => $nsp %>
+  <%= hidden_field probe_id => $form{probe_id} %>
   <table>
-    <tr><td>Graph name:</td><td><input type="text" size="50" name="graph_name" value="<%== $graph_name %>" /></td></tr>
+    <tr><td>Graph name:</td><td><input type="text" <% if (exists $form_err{graph_name}) { %>class="form_error"<% } %> size="50" name="graph_name" value="<%== $graph_name %>" /></td></tr>
     <tr><td>Description:</td><td><textarea rows="3" cols="50" name="graph_desc"><%== $graph_desc %></textarea></td></tr>
   </table>
 
   <div id="form">
     <label for="query">Query: 
-      <textarea id="query" rows="8" cols="80" name="query"><%== $query %></textarea>
+      <textarea id="query" rows="8" cols="80" <% if (defined $form_err{query}) { %>class="form_error"<% } %> name="query"><%== $query %></textarea>
     </label>
     <div>
       <label for="graph-line">
-	<input id="graph-line" type="radio" name="graph-type" value="lines" checked="checked" /> Lines
+	<input id="graph-line" type="radio" name="graph-type" value="lines" <% if ($form{'graph-type'} eq 'lines') { %>checked="checked"<% } %> /> Lines
       </label>
       <label for="graph-points">
-	<input id="graph-points" type="radio" name="graph-type" value="points" /> Points
+	<input id="graph-points" type="radio" name="graph-type" value="points" <% if ($form{'graph-type'} eq 'points') { %>checked="checked"<% } %>  /> Points
       </label>
       <label for="graph-pie">
-	<input id="graph-pie" type="radio" name="graph-type" value="pie" /> Pie
+	<input id="graph-pie" type="radio" name="graph-type" value="pie" <% if ($form{'graph-type'} eq 'pie') { %>checked="checked"<% } %>  /> Pie
       </label>
     </div>
 
     <label for="series-width">
-      Series width: <input id="series-width" type="text" name="series-width" size="3" value="1" />
+      Series width: <input id="series-width" type="text" name="series-width" size="3" value="<%= $form{'series-width'} %>" />
     </label>
 
     <div>
       <label for="stacked">
-	<input id="stacked" type="checkbox" name="stacked" /> Stacked ?
+	<input id="stacked" type="checkbox" name="stacked" <% if ($form{'stacked'} eq 'on') { %>checked="checked"<% } %> /> Stacked ?
       </label>
       <label for="filled">
-	<input id="filled" type="checkbox" name="filled" /> Filled ?
+	<input id="filled" type="checkbox" name="filled" <% if ($form{'filled'} eq 'on') { %>checked="checked"<% } %> /> Filled ?
       </label>
     </div>
 
     <div>
       <label for="show-legend">
-	<input id="show-legend" type="checkbox" name="show-legend" /> Show legend ?
+	<input id="show-legend" type="checkbox" name="show-legend" <% if ($form{'show-legend'} eq 'on') { %>checked="checked"<% } %> /> Show legend ?
       </label>
       <label for="legend-cols">
-	Legend cols: <input id="legend-cols" type="text" name="legend-cols" size="3" value="1" />
+	Legend cols: <input id="legend-cols" type="text" name="legend-cols" size="3" value="<%= $form{'legend-cols'} %>" />
       </label>
     </div>
     <input type="button" id="add_graph" name="add_graph" value="Graph" />
@@ -59,8 +62,16 @@
 
   <div style="clear: both;">&nbsp;</div>
 
-
-  <%= submit_button 'Save', name => 'save' %>
-
+  <div id="save">
+    <ul>
+      <li><label for="savegraph"><input id="savegraph" type="radio" name="save_action" value="sc" <% if ($form{save_action} eq 'sc') { %>checked="checked"<% } %> /> Save the current graph</label></li>
+      <% if ($form{graph_is_default}) { %>
+      <li><label for="overwrite"><input id="overwrite" type="radio" name="save_action" value="ow" <% if ($form{save_action} eq 'ow') { %>checked="checked"<% } %> /> Overwrite the default graph</label></li>
+      <% } %>
+      <li><label for="asnew"><input id="asnew" type="radio" name="save_action" value="an" <% if ($form{save_action} eq 'an') { %>checked="checked"<% } %> /> Save as a new graph</label></li>
+      <li><label for="asnewdef"><input id="asnewdef" type="radio" name="save_action" value="and" <% if ($form{save_action} eq 'and') { %>checked="checked"<% } %> /> Create a new default graph for probe:</label> <%= select_field probe => $form{probes}, selected => $form{probe} %></li>
+    </ul>
+    <%= submit_button 'Save', name => 'save' %>
+  </div>
 
 <% end %>

@@ -1,4 +1,5 @@
 % layout 'default';
+% my @graphs = @{stash 'graphs'};
 <h2><%= $nsp %></h2>
 
 <div id="nav">
@@ -8,38 +9,50 @@
   </ul>
 </div>
 
-<% if (scalar(@{$graphs})) { %>
-<%   for my $g (@{$graphs}) { %>
-<h3><%= $g->{desc} %></h3>
+% if (scalar(@{$graphs})) {
+%= form_for draw_show => (method => 'POST') => begin
+%     for my $g (@graphs) {
+%         my %graph = %{$g};
+<div id="graph">
+  <p>
+    <%= check_box selection => $graph{id}, checked => 'checked' %>
+    <%= $graph{desc} %>
+    <%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => begin %>Edit<% end %>
+    <%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => begin %>Remove<% end %>
+  </p>
 
-<div id="graph<%= $g->{id} %>" style="width:700px;height:300px;"></div>
-<div id="legend_<%= $g->{id} %>"></div>
+  <div id="graph<%= $graph{id} %>" style="width:700px;height:300px;"></div>
+  <div id="legend<%= $graph{id} %>"></div>
 
-<script type="text/javascript">
-  var options<%= $g->{id} %> = {
-         legend: { show: true, container: $('#legend_<%= $g->{id} %>') },
-         xaxis: { mode: 'time' },
-         selection: { mode: "x", color: "#444" }
-      };
+  <script type="text/javascript">
+    var options<%= $graph{id} %> = {
+      legend: { show: true, container: $('#legend<%= $graph{id} %>') },
+      xaxis: { mode: 'time' },
+      selection: { mode: "x", color: "#444" }
+    };
 
-  $(document).ready(function(){
-    $.plot($('#graph<%= $g->{id} %>'),<%== $g->{data} %>, options<%= $g->{id} %>);
+    $(document).ready(function(){
+      $.plot($('#graph<%= $graph{id} %>'),<%== $graph{data} %>, options<%= $graph{id} %>);
+    });                
+  </script>
+</div>
+%     }
 
-    
-  });                
-</script>
-<%   } %>
-<% } else { %>
+<div style="clear: both;">&nbsp;</div>
+
+<div id="save">
+  <p>Select new graphs:</p> <%= select_field new_graphs => $new_graphs, multiple => 'multiple', size => 5 %>
+  <p><%= submit_button 'Update selection', name => 'update' %></p>
+</div>
+% end
+% } else {
 <p>No graphs found</p>
-<% } %>
+% }
 
 <%#
 TODO:
- - liens de navigation
- - selection:
+ - selection: -> ajax!
    - range
    - series
- - boutons edit et remove
- - checkbox devant chaque graph pour maj la selection
- - liste select de graphs à ajouter en bas
+ - options
 %>

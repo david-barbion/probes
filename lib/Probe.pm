@@ -50,7 +50,7 @@ sub startup {
 #    $rw->route('/:id/delete', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
 
 
-    # Gestion des graphs (Probe::Graphs)
+    # Gestion de tous les graphs même les customs graphs (Probe::Graphs)
 #    my $gw = $r->waypoint('/graphs')         ->to('graphs#list')   ->name('graphs_list');
 #    $gw->route('/add')                       ->to('graphs#add')    ->name('graphs_add');
 #    $gw->route('/:id', id => qr/\d+/)        ->to('graphs#show')   ->name('graphs_show');
@@ -63,12 +63,13 @@ sub startup {
 
     my $dw = $r->waypoint('/draw/:nsp')                  ->to('draw#list')      ->name('draw_list');
     $dw->route('/save')       ->via('post')              ->to('draw#save_list') ->name('draw_list_save');
+    $dw->route('/orphans')                               ->to('draw#orphans')   ->name('draw_orphans');
     $dw->route('/show')                                  ->to('draw#show')      ->name('draw_show'); # tous les graphes sur une page
     $dw->route('/add')        ->via('get')               ->to('draw#add')       ->name('draw_add'); # page à la auditools vide
-    $dw->route('/add')        ->via('post')              ->to('draw#save_add')  ->name('draw_add_save'); # page à la auditools vide
+    $dw->route('/add')        ->via('post')              ->to('draw#save_add')  ->name('draw_add_save');
     $dw->route('/edit/:id', id => qr/\d+/) ->via('get')  ->to('draw#edit')      ->name('draw_edit'); # page à la auditools avec requete
     $dw->route('/edit/:id', id => qr/\d+/) ->via('post') ->to('draw#save_edit') ->name('draw_edit_save');
-#    $dw->route('/delete/:id', id => qr/\d+/)             ->to('draw#remove')    ->name('draw_remove');
+    $dw->route('/remove/:id', id => qr/\d+/)             ->to('draw#remove')    ->name('draw_remove'); # remove from saved list with orphan management
 
 }
 

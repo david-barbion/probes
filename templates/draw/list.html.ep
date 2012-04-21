@@ -1,8 +1,16 @@
 % layout 'default';
+% my @graphs = @{stash 'graphs'};
 <h2>Available graphs</h2>
 
+<div id="page_nav">
+  <ul>
+    <li><%= link_to home => begin %>Back to probe sets<% end %></li>
+    <li><%= link_to draw_add => { nsp => $nsp } => begin %>Add a new graph<% end %></li>
+  </ul>
+</div>
+
 <div id="graphs">
-  <% if (scalar(@{$graphs})) { %>
+% if (scalar(@graphs)) {
   <%= form_for draw_list_save => (method => 'POST') => begin %>
   <table>
     <tr>
@@ -11,28 +19,34 @@
       <th>Description</th>
       <th>&nbsp;</th>
     </tr>
-    <% for my $g (@{$graphs}) { %>
+%     foreach my $g (@graphs) {
+%         my %line = %{$g};
     <tr>
       <td>
-	<input type="checkbox" name="selection" value="<%= $g->{id} %>" <% if ($g->{saved}) { %>checked<% } %> />
+	<input type="checkbox" name="selection" value="<%= $line{id} %>" <% if ($line{saved}) { %>checked<% } %> />
       </td>
       <td>
-	<%= link_to draw_edit => {nsp => $nsp, id => $g->{id}} => begin %><%= $g->{name} %><% end %>
+	<%= $line{name} %>
       </td>
       <td>
-	<%= $g->{desc} %>
+	<%= $line{desc} %>
       </td>
       <td>
-	<%= link_to draw_edit => {nsp => $nsp, id => $g->{id}} => begin %>Edit<% end %>
+	<%= link_to draw_edit => {nsp => $nsp, id => $line{id}} => begin %>Edit<% end %>
+%         if (exists $line{removable}) {
+	<%= link_to draw_remove => {nsp => $nsp, id => $line{id}} => begin %>Delete<% end %>
+%         }
       </td>
     </tr>
-    <% } %>
+%     }
   </table>
-  <%= submit_button 'Save selection', name => 'dest', value => 'update' %>
-  <%= submit_button 'Show selection', name => 'dest', value => 'show' %>
-  <%= submit_button 'New graphs', name => 'dest', value => 'new' %>
+
+  <p>
+  <%= submit_button 'Save selection', name => 'submit_save' %>
+  <%= submit_button 'Show selection', name => 'submit_show' %>
+  </p>
   <% end %>
-  <% } else { %>
+% } else {
   <p>No graphs found</p>
-  <% } %>
+% }
 </div>

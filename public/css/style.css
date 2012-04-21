@@ -266,7 +266,7 @@ a:link.active, a:visited.active, a:hover {
     border: 1px solid #999;
 }
 
-.form_field_error input {
+.form_error {
     border: 2px solid #f00;
 }
 

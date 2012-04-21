@@ -30,7 +30,7 @@ sub show {
     my $self = shift;
 
     my $sth = $self->database;
-    my $sth = $dbh->prepare("SELECT probe_name, description, version, probe_request FROM probes WHERE id = ?");
+    my $sth = $dbh->prepare("SELECT probe_name, description, version, probe_query FROM probes WHERE id = ?");
     $sth->execute($self->param('id'));
     my @row = $sth->fetchrow();
 
