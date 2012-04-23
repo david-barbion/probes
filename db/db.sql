@@ -77,6 +77,13 @@ create table graphs_options (
        option_value text not null
 );
 
+-- function to help get the proper timestamp usable by flot: offset
+-- from epoch in millisecond in the local time
+create or replace function flot_time(timestamptz) returns bigint language 'sql' as
+$$
+SELECT ((extract(epoch FROM $1) + extract(timezone FROM $1))*1000)::bigint;
+$$;
+
 
 -- default probes
 insert into probes (probe_name, description, version, probe_query) values ('cluster_hitratio', 'Cache hit/miss ratio on the cluster', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, round(sum(

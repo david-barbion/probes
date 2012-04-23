@@ -1,6 +1,6 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
-<h2>Discard graphs</h2>
+<h2>Discard custom graphs</h2>
 
 <div>
   <%= form_for draw_orphans => (method => 'POST') => begin %>
@@ -25,7 +25,7 @@
 % }
 
   <div id="save">
-    <p><%= submit_button 'Save', name => 'save' %><%= submit_button 'Cancel', name => 'cancel' %></p>
+    <p><%= submit_button 'Confirm', name => 'save' %><%= submit_button 'Cancel', name => 'cancel' %></p>
   </div>
   <% end %>
 </div>

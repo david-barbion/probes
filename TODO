@@ -1,5 +1,5 @@
 everything:
-- check db error
+- check db error, at least for writes and query run on user input
 - add messages where needed
 - rework CSS for sub menus
 - add breadcrumbs ? or page tree path ?
@@ -8,21 +8,15 @@ draw show
 - add interaction:
   * interval selection
   * show/hide series ?
+- hide select_field when empty
+- catch errors in graph query execution and display a message
+
+draw data
+- catch errors in graph query execution and display a message
 
 draw edit
-- add a session var to redirect to proper source page (list or show)
-- merge edit and save_edit, use taghelper for the options
-- cancel button ?
 
 draw add
-- manage redirect (list or show)
-- merge add and save_add, use taghelper for the options
-- save and retrieve options
-- use actions in the save div similar to edit
-- cancel button ?
 - factorize templates with edit ?
 
 draw remove
-- remove graph from save list
-- orphan management like the others
-- manage redirect, this is a confirm page and orphans is another one that may be chained

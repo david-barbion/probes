@@ -1,0 +1,19 @@
+% layout 'default';
+% my %graph = %{stash 'graph'};
+<h2>Deselect graph</h2>
+
+<p>Are you sure you want to remove this graph from the list?</p>
+
+<div>
+  <%= form_for draw_remove => (method => 'POST') => begin %>
+  <div>
+    <h3><%= $graph{name} %></h3>
+    <p><%= $graph{desc} %></p>
+    <p><pre><%= $graph{query} %></pre></p>
+  </div>
+
+  <div id="save">
+    <p><%= submit_button 'Yes', name => 'save' %><%= submit_button 'No', name => 'cancel' %></p>
+  </div>
+  <% end %>
+</div>

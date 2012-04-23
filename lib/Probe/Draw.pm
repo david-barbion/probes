@@ -120,6 +120,9 @@ WHERE ps.nsp_name = ?});
     my @list = sort { $a->{name} cmp $b->{name} }values %{$graphs};
     $self->stash(graphs => \@list);
 
+    # set origin for add and edit pages
+    $self->session->{origin} = 'draw_list';
+
     $self->render();
 }
 
@@ -173,7 +176,12 @@ WHERE ps.nsp_name = ?});
     $sth->finish;
 
     my $form_data = $self->req->params->to_hash;
-    my %selection = map { $_ => 1 } @{$form_data->{selection}};
+    my %selection;
+    if (ref $form_data->{selection} eq '') {
+	$selection{$form_data->{selection}} = 1;
+    } else {
+	%selection = map { $_ => 1 } @{$form_data->{selection}};
+    }
 
     # Compare the submitted selection to the two lists to find
     # possible orphans when graphs are unselected
@@ -251,7 +259,7 @@ sub orphans {
 	my $origin = $self->session->{origin} ||= 'draw_list';
 	delete $self->session->{origin};
 
-	return $self->redirect_to('draw_list', nsp => $nsp);
+	return $self->redirect_to($origin, nsp => $nsp);
     }
 
     my $method = $self->req->method;
@@ -286,7 +294,6 @@ sub orphans {
 	my $e = 0;
 	while (my ($i, $d) = each $dest) {
 	    if ($d->{action} eq 'link' && $d->{probe} eq '') {
-		$self->msg->debug(qq{$i a=$d->{action}, p=$d->{probe}});
 		$e = 1;
 		last;
 	    }
@@ -392,7 +399,6 @@ sub show {
 
     my $nsp = $self->param('nsp');
 
-
     my $dbh = $self->database;
 
     # there may be a form submission
@@ -408,8 +414,8 @@ WHERE ps.nsp_name = ?});
 	$sth->execute($nsp);
 
 	my $saved = { };
-	while (my @row = $sth->fetchrow()) {
-	    $saved->{$row[0]} = 0;
+	while (my ($i) = $sth->fetchrow()) {
+	    $saved->{$i} = 0;
 	}
 	$sth->finish;
 
@@ -424,13 +430,18 @@ WHERE ps.nsp_name = ?});
 	$sth->execute($nsp);
 
 	my $probe = { };
-	while (my @row = $sth->fetchrow()) {
-	    $probe->{$row[0]} = 1;
+	while (my ($i) = $sth->fetchrow()) {
+	    $probe->{$i} = 1;
 	}
 	$sth->finish;
 
 	my $form_data = $self->req->params->to_hash;
-	my %selection = map { $_ => 1 } @{$form_data->{selection}};
+	my %selection;
+	if (ref $form_data->{selection} eq '') {
+	    $selection{$form_data->{selection}} = 1;
+	} else {
+	    %selection = map { $_ => 1 } @{$form_data->{selection}};
+	}
 
 	# Compare the submitted selection to the two lists to find
 	# possible orphans when graphs are unselected
@@ -455,10 +466,13 @@ WHERE ps.nsp_name = ?});
 		push @{$changes->{orphans}}, $k if $v;
 	    }
 	}
-	if (ref $form_data->{new_graphs} eq '') {
-	    $changes->{add} = [ $form_data->{new_graphs} ];
-	} else {
-	    $changes->{add} = $form_data->{new_graphs};
+
+	if (exists $form_data->{new_graphs}) {
+	    if (ref $form_data->{new_graphs} eq '') {
+		$changes->{add} = [ $form_data->{new_graphs} ];
+	    } else {
+		$changes->{add} = $form_data->{new_graphs};
+	    }
 	}
 
 	# If possible orphan graphs are found, ask the user input on what
@@ -470,33 +484,32 @@ WHERE ps.nsp_name = ?});
 	    return $self->redirect_to('draw_orphans', nsp => $nsp);
 	}
 
+	my $rb = 0;
 	$sth = $dbh->prepare(qq{DELETE FROM custom_graphs
 WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?)
 AND id_graph = ?});
 	foreach my $id (@{$changes->{remove}}) {
-	    $sth->execute($nsp, $id);
+	    $rb = 1 unless defined $sth->execute($nsp, $id);
 	}
 	$sth->finish;
 
 	$sth = $dbh->prepare(qq{INSERT INTO custom_graphs (id_set, id_graph)
 VALUES ((SELECT id FROM probe_sets WHERE nsp_name = ?), ?)});
 	foreach my $id (@{$changes->{add}}) {
-	    $sth->execute($nsp, $id);
+	    $rb = 1 unless defined $sth->execute($nsp, $id);
 	}
 	$sth->finish;
 
-	$dbh->commit;
+	if ($rb) {
+	    $self->msg->error("An error occured while saving. Action has been cancelled");
+	    $dbh->rollback;
+	} else {
+	    $dbh->commit;
+	}
 
 	# when the form is saved, the db is ready to give the new list
     }
 
-    # Get the list of saved graphs
-    my $sth = $dbh->prepare(qq{SELECT g.id, g.graph_name, g.description, g.query
-FROM graphs g
-JOIN custom_graphs cg ON (cg.id_graph = g.id)
-JOIN probe_sets ps ON (ps.id = cg.id_set)
-WHERE ps.nsp_name = ? ORDER BY 2});
-    $sth->execute($nsp);
 
     # Get the list of default graphs for the select list in the update form
     my $def = $dbh->prepare(qq{SELECT g.id, g.graph_name
@@ -513,6 +526,14 @@ WHERE ps.nsp_name = ?});
 	$defg{$row[0]} = $row[1];
     }
     $def->finish;
+
+    # Get the list of saved graphs
+    my $sth = $dbh->prepare(qq{SELECT g.id, g.graph_name, g.description, g.query
+FROM graphs g
+JOIN custom_graphs cg ON (cg.id_graph = g.id)
+JOIN probe_sets ps ON (ps.id = cg.id_set)
+WHERE ps.nsp_name = ? ORDER BY 2});
+    $sth->execute($nsp);
 
     # prepare to get the data from each graph query
     my $dbh_data = $self->database;
@@ -548,9 +569,94 @@ WHERE ps.nsp_name = ?});
 	my $json_data = $json->encode($data);
 
 	# XXX Find the options of the graph
+	# default options
+	my %options = ();
+	$sth_data = $dbh_data->prepare(qq{SELECT option_name, default_value FROM flot_options});
+	$sth_data->execute();
+	while (my ($k, $v) = $sth_data->fetchrow()) {
+	    $options{$k} = $v;
+	}
+	$sth_data->finish;
+	# graph options, override default options
+	$sth_data = $dbh_data->prepare(qq{SELECT fo.option_name, go.option_value
+FROM flot_options fo
+  JOIN graphs_options go ON (go.id_option = fo.id)
+  JOIN graphs g ON (go.id_graph = g.id) WHERE g.id = ?});
+	$sth_data->execute($row[0]);
+	while (my ($k, $v) = $sth_data->fetchrow()) {
+	    $options{$k} = $v;
+	}
+	$sth_data->finish;
+
+	# transform this to flot options, here is the mapping
+	#  option_name  | default_value 
+	# --------------+---------------
+	#  stacked      | off     -> series
+	#  legend-cols  | 1       -> legend
+	#  series-width | 0.5     -> series[graph-type]
+	#  show-legend  | off     -> legend
+	#  graph-type   | points  -> series
+	#  filled       | off     -> series[graph-type]
+
+	my $fo = { };
+	while (my ($k, $v) = each %options) {
+	    if ($k eq 'stacked' && $v eq 'on') {
+		$fo->{series} = { } unless exists $fo->{series};
+		$fo->{series}->{staked} = Mojo::JSON->true;
+	    }
+	    elsif ($k eq 'legend-cols') {
+		$fo->{legend} = { } unless exists $fo->{legend};
+		$fo->{legend}->{noColumns} = $v;
+	    }
+	    elsif ($k eq 'series-width') {
+		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
+		$fo->{_type_opts}->{width} = $v;
+	    }
+	    elsif ($k eq 'show-legend' && $v eq 'on') {
+		$fo->{legend} = { } unless exists $fo->{legend};
+		$fo->{legend}->{container} = undef;
+	    }
+	    elsif ($k eq 'graph-type') {
+		$fo->{_type} = $v;
+	    }
+	    elsif ($k eq 'filled' && $v eq 'on') {
+		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
+
+		$fo->{_type_opts}->{fill} = Mojo::JSON->true;
+	    }
+	}
+
+	# Move graph-type related options inside the porper branch
+	if ($fo->{_type} eq 'lines') {
+	    $fo->{series} = { } unless exists $fo->{series};
+	    $fo->{series}->{lines} = $fo->{_type_opts};
+	    delete $fo->{_type_opts};
+	    $fo->{series}->{lines}->{lineWidth} = $fo->{series}->{lines}->{width};
+	    delete $fo->{series}->{lines}->{width};
+	    $fo->{series}->{lines}->{show} = Mojo::JSON->true;
+	    delete $fo->{_type};
+	} elsif ($fo->{_type} eq 'points') {
+	    $fo->{series}->{points} = $fo->{_type_opts};
+	    delete $fo->{_type_opts};
+	    $fo->{series}->{points}->{radius} = $fo->{series}->{points}->{width};
+	    delete $fo->{series}->{points}->{width};
+	    $fo->{series}->{points}->{show} = Mojo::JSON->true;
+	    delete $fo->{_type};
+	} elsif ($fo->{_type} eq 'pie') {
+	    $fo->{series}->{pie} = $fo->{_type_opts};
+	    delete $fo->{_type_opts};
+	    $fo->{series}->{pie}->{radius} = $fo->{series}->{pie}->{width};
+	    delete $fo->{series}->{pie}->{width};
+	    $fo->{series}->{pie}->{show} = Mojo::JSON->true;
+	    delete $fo->{_type};
+	}
+
+
+	my $json_opts = $json->encode($fo);
 
 	# Merge everything into an item of the graph list
-	push @{$graphs}, { id => $row[0], name => $row[1], desc => $row[2], data => $json_data };
+	push @{$graphs}, { id => $row[0], name => $row[1], desc => $row[2],
+			   data => $json_data, options => $json_opts };
 
 	# remove the default graphs already selected from the select list
 	delete $defg{$row[0]};
@@ -572,34 +678,127 @@ WHERE ps.nsp_name = ?});
     $self->stash(new_graphs => $new_graphs);
     $self->stash(graphs => $graphs);
 
+    # set origin for add and edit pages
+    $self->session->{origin} = 'draw_show';
+
     $self->render();
 }
 
 sub add {
     my $self = shift;
 
-    # find all available graphs for the set to fill presets
-    my $q = qq{SELECT g.graph_name, g.query FROM graphs g
+    my $nsp = $self->param('nsp');
+
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+	# process the input data
+	my $form_data = $self->req->params->to_hash;
+
+	# Redirect if cancel button has been pressed
+	if (exists $form_data->{cancel}) {
+	    my $origin = $self->session->{origin} ||= 'draw_show';
+	    delete $self->session->{origin};
+	    return $self->redirect_to($origin, nsp => $nsp);
+	}
+
+	# Error processing
+	my $e = 0;
+	if ($form_data->{graph_name} eq '') {
+	    $self->msg->error("Empty Graph name");
+	    $e = 1;
+	}
+	if ($form_data->{query} eq '') {
+	    $self->msg->error("Empty query");
+	    $e = 1;
+	}
+
+	unless ($e) {
+	    my $dbh = $self->database;
+
+	    my $rb = 0;
+	    # add the new graph
+	    my $sth = $dbh->prepare("INSERT INTO graphs (graph_name, description, query)
+VALUES (?, ? , ?) RETURNING id");
+	    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
+						 $form_data->{graph_desc},
+						 $form_data->{query});
+
+	    my ($id) = $sth->fetchrow();
+	    $sth->finish;
+
+	    # select directly the graph for the current set
+	    $sth = $dbh->prepare("INSERT INTO custom_graphs (id_graph, id_set)
+VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))");
+	    $rb = 1 unless defined $sth->execute($id, $nsp);
+	    $sth->finish;
+
+	    # link the graph to the selected probe to make it available for everyone
+	    if (exists $form_data->{newdef}) {
+		$sth = $dbh->prepare("INSERT INTO default_graphs (id_graph, id_probe) VALUES (?, ?)");
+		$rb = 1 unless defined $sth->execute($id, $form_data->{probe});
+		$sth->finish;
+	    }
+
+	    # Save the options
+	    $sth = $dbh->prepare(qq{SELECT id, option_name, default_value FROM flot_options});
+	    $rb = 1 unless defined $sth->execute();
+	    my %opt_values = ();
+	    my %opt_ids = ();
+	    while (my ($i, $o, $v) = $sth->fetchrow()) {
+		$opt_values{$o} = $v;
+		$opt_ids{$o} = $i;
+	    }
+	    $sth->finish;
+
+	    $sth = $dbh->prepare(qq{INSERT INTO graphs_options (id_graph, id_option, option_value)
+VALUES (?, ?, ?)});
+	    foreach my $opt (keys %opt_values) {
+		if (exists $form_data->{$opt}) {
+		    if ($form_data->{$opt} ne $opt_values{$opt}) {
+			$rb = 1 unless defined $sth->execute($id, $opt_ids{$opt}, $form_data->{$opt});
+		    }
+		} else {
+		    # radio/checkboxes off with default being on
+		    if ($opt_values{$opt} eq 'on') {
+			$rb = 1 unless defined $sth->execute($id, $opt_ids{$opt}, 'off');
+		    }
+		}
+	    }
+	    $sth->finish;
+
+	    if ($rb) {
+		$self->msg->error("An error occured while saving. Action has been cancelled");
+		$dbh->rollback;
+	    } else {
+		$dbh->commit;
+	    }
+	    $dbh->disconnect;
+
+	    # redirect
+	    my $origin = $self->session->{origin} ||= 'draw_show';
+	    delete $self->session->{origin};
+	    return $self->redirect_to($origin, nsp => $nsp);
+	}
+    }
+
+    my $dbh = $self->database;
+
+    # Find all available graphs for the set to fill presets
+    my $sth = $dbh->prepare(qq{SELECT g.graph_name, g.query FROM graphs g
 JOIN default_graphs dg ON (g.id = dg.id_graph)
 JOIN probes p ON (p.id = dg.id_probe)
 JOIN probes_in_sets pis ON (pis.id_probe = p.id)
 JOIN probe_sets ps ON (ps.id = pis.id_set)
 LEFT JOIN custom_graphs cg ON (cg.id_graph = g.id and cg.id_set = ps.id)
 WHERE ps.nsp_name = ? ORDER BY 2
-};
+});
+    $sth->execute($nsp);
 
-    my $dbh = $self->database;
-    my $sth = $dbh->prepare($q);
-    $sth->execute($self->param('nsp'));
-
-    # Input format for the select taghelper: %= select_field country => [[Germany => 'de'], 'en']
-    # [ [ { option text => value } ], ... ]
     my $presets = [ '' ];
-    while (my @row = $sth->fetchrow()) {
-	my $option = [ $row[0] => $row[1] ];
+    while (my ($i, $q) = $sth->fetchrow()) {
+	my $option = [ $i => $q ];
 	push @{$presets}, $option;
     }
-
     $sth->finish;
 
     # Get the list of probes for the select list in the save form
@@ -608,8 +807,21 @@ WHERE ps.nsp_name = ? ORDER BY 2
 
     my $probes = [ '' ];
     while (my @row = $sth->fetchrow()) {
-	push @{$probes}, [ $row[1].'('.$row[2].')'  => $row[0] ];
+	push @{$probes}, [ $row[1].' ('.$row[2].')'  => $row[0] ];
     }
+    $sth->finish;
+
+    # Get the default options and make the preselections without
+    # overwritting the controller params
+    my $options = { };
+    $sth = $dbh->prepare(qq{SELECT option_name, default_value FROM flot_options});
+    $sth->execute();
+    while (my ($o, $v) = $sth->fetchrow()) {
+	$options->{$o} = $v;
+	next if ($v eq 'off'); # checkboxes and radios
+	$self->param($o, $v) if !defined $self->param($o);
+    }
+    $sth->finish;
 
     $dbh->commit;
     $dbh->disconnect;
@@ -620,57 +832,198 @@ WHERE ps.nsp_name = ? ORDER BY 2
     $self->render();
 }
 
-sub save_add {
-    my $self = shift;
-
-    # input: query, graph parameters (for later), saved_name, saved_desc, saved_probe, save (bouton)
-
-    if (!defined($self->param('save'))) {
-	return $self->redirect_to('draw_add', nsp => $self->param('nsp'));
-    }
-
-    my $nsp = $self->param('nsp');
-    my $name = $self->param('saved_name');
-    my $desc = $self->param('saved_desc');
-    my $probe = $self->param('saved_probe');
-    my $query = $self->param('query');
-
-    unless ($name) {
-	$self->msg->error('Unable to save graph, name is empty');
-	return $self->redirect_to('draw_add', nsp => $self->param('nsp'));
-    }
-
-    my $dbh = $self->database;
-
-    # add the new graph
-    my $sth = $dbh->prepare("INSERT INTO graphs (graph_name, description, query) VALUES (?, ? , ?) RETURNING id");
-    $sth->execute($name, $desc, $query);
-
-    my @ret = $sth->fetchrow();
-    $sth->finish;
-
-    # select directly the graph for the current set
-    $sth = $dbh->prepare("INSERT INTO custom_graphs (id_graph, id_set) VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))");
-    $sth->execute($ret[0], $nsp);
-
-    # link the graph to the selected probe to make it available for everyone
-    if ($probe) {
-	$sth = $dbh->prepare("INSERT INTO default_graphs (id_graph, id_probe) VALUES (?, ?)");
-	$sth->execute($ret[0], $probe);
-    }
-
-    $dbh->commit;
-    $dbh->disconnect;
-
-    return $self->redirect_to('draw_add', nsp => $self->param('nsp'));
-}
-
 sub edit {
     my $self = shift;
 
     my $nsp = $self->param('nsp');
     my $id = $self->param('id');
-    my $form_data = { };
+
+
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+	# process the input data
+	my $form_data = $self->req->params->to_hash;
+
+	# Redirect if cancel button has been pressed
+	if (exists $form_data->{cancel}) {
+	    my $origin = $self->session->{origin} ||= 'draw_show';
+	    delete $self->session->{origin};
+	    return $self->redirect_to($origin, nsp => $nsp);
+	}
+
+	# Error processing
+	my $e = 0;
+	if ($form_data->{graph_name} eq '') {
+	    $self->msg->error("Empty Graph name");
+	    $e = 1;
+	}
+	if ($form_data->{query} eq '') {
+	    $self->msg->error("Empty query");
+	    $e = 1;
+	}
+
+	unless ($e) {
+	    my $dbh = $self->database;
+	    my $sth;
+	    # Process the form. There are 4 possible actions:
+	    # * Save the current graph (sc)
+	    # * Overwrite the default graph (ow)
+	    # * Save as a new graph (an)
+	    # * Create a new default graph for probe (and)
+
+	    my $rb = 0;
+	    if ($form_data->{save_action} eq 'sc') {
+		# if it is a default graph, create a new graph and update the
+		# custom_graphs link: do not ovewrite default here. Otherwise,
+		# update graphs
+		if ($form_data->{probe_id}) {
+		    $sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
+							 $form_data->{graph_desc},
+							 $form_data->{query});
+
+		    my ($new_id) = $sth->fetchrow();
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{UPDATE custom_graphs SET id_graph = ? WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?) AND id_graph = ?});
+		    $rb = 1 unless defined $sth->execute($new_id, $nsp, $id);
+		    $sth->finish;
+
+		    # replace the graph id to set the options later
+		    $id = $new_id;
+		} else {
+		    $sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
+		    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
+				  $form_data->{graph_desc},
+				  $form_data->{query},
+				  $id);
+		    $sth->finish;
+		}
+	    }
+
+	    if ($form_data->{save_action} eq 'ow') {
+		# overwrite the graph, update graphs
+		$sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
+		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
+			      $form_data->{graph_desc},
+			      $form_data->{query},
+			      $id);
+		$sth->finish;
+	    }
+
+	    if ($form_data->{save_action} eq 'an') {
+		# insert graph, add a custom link
+		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
+			      $form_data->{graph_desc},
+			      $form_data->{query});
+
+		my ($new_id) = $sth->fetchrow();
+		$sth->finish;
+
+		$sth = $dbh->prepare(qq{INSERT INTO custom_graphs (id_graph, id_set) VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))});
+		$rb = 1 unless defined $sth->execute($new_id, $nsp);
+		$sth->finish;
+
+		# replace the graph id to set the options later
+		$id = $new_id;
+	    }
+
+	    if ($form_data->{save_action} eq 'and') {
+		# insert graph, add a custom link and a default link
+		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
+			      $form_data->{graph_desc},
+			      $form_data->{query});
+
+		my @row = $sth->fetchrow();
+		my $new_id = $row[0];
+		$sth->finish;
+
+		$sth = $dbh->prepare(qq{INSERT INTO custom_graphs (id_graph, id_set) VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))});
+		$rb = 1 unless defined $sth->execute($new_id, $nsp);
+		$sth->finish;
+
+		$sth = $dbh->prepare(qq{INSERT INTO default_graphs (id_graph, id_probe) VALUES (?, ?)});
+		$rb = 1 unless defined $sth->execute($new_id, $form_data->{probe});
+		$sth->finish;
+
+		# replace the graph id to set the options later
+		$id = $new_id;
+	    }
+
+	    # Save the options: retrieve the default options and the current
+	    # options, then compare to the form data to only add/update non
+	    # default values
+
+	    # default options
+	    $sth = $dbh->prepare(qq{SELECT id, option_name, default_value FROM flot_options});
+	    $rb = 1 unless defined $sth->execute();
+
+	    my %default_options = ();
+	    my %options_ids = ();
+	    while (my @row = $sth->fetchrow()) {
+		$default_options{$row[1]} = $row[2];
+		$options_ids{$row[1]} = $row[0];
+	    }
+	    $sth->finish;
+
+	    # the graph options
+	    $sth = $dbh->prepare(qq{SELECT fo.option_name, go.option_value
+FROM flot_options fo
+  JOIN graphs_options go ON (go.id_option = fo.id)
+  JOIN graphs g ON (go.id_graph = g.id) WHERE g.id = ?});
+	    $rb = 1 unless defined $sth->execute($id);
+
+	    my %graph_options = ();
+	    while (my @row = $sth->fetchrow()) {
+		$graph_options{$row[0]} = $row[1];
+	    }
+	    $sth->finish;
+
+	    # Prepare the three possible statements
+	    my $ins = $dbh->prepare(qq{INSERT INTO graphs_options (id_graph, id_option, option_value) VALUES (?, ?, ?)});
+	    my $upd = $dbh->prepare(qq{UPDATE graphs_options SET option_value = ? WHERE id_graph = ? AND id_option = ?});
+	    my $del = $dbh->prepare(qq{DELETE FROM graphs_options WHERE id_graph = ? AND id_option = ?});
+	    foreach my $opt (keys %default_options) {
+		if (defined $form_data->{$opt}) { # option is set in form
+		    if (defined $graph_options{$opt}) { # option is local to graph
+			if ($form_data->{$opt} ne $graph_options{$opt}
+			    and $form_data->{$opt} ne $default_options{$opt}) {
+			    $rb = 1 unless defined $upd->execute($form_data->{$opt}, $id, $options_ids{$opt});
+			} elsif ($form_data->{$opt} eq $default_options{$opt}) {
+			    $rb = 1 unless defined $del->execute($id, $options_ids{$opt});
+			}
+		    } elsif ($form_data->{$opt} ne $default_options{$opt}) {
+			# not in graph_options and non default value
+			$rb = 1 unless defined $ins->execute($id, $options_ids{$opt}, $form_data->{$opt});
+		    }
+		} elsif ($default_options{$opt} eq 'on') {
+		    # 'off' checkboxes do not appear in form_data but default is 'on'
+		    $rb = 1 unless defined $ins->execute($id, $options_ids{$opt}, 'off');
+		} else {
+		    # delete checkbox values gone 'off'
+		    $rb = 1 unless defined $del->execute($id, $options_ids{$opt});
+		}
+	    }
+	    $ins->finish;
+	    $upd->finish;
+	    $del->finish;
+
+	    if ($rb) {
+		$self->msg->error("An error occured while saving. Action has been cancelled");
+		$dbh->rollback;
+	    } else {
+		$dbh->commit;
+	    }
+	    $dbh->disconnect;
+
+	    # redirect
+	    my $origin = $self->session->{origin} ||= 'draw_show';
+	    delete $self->session->{origin};
+	    return $self->redirect_to($origin, nsp => $nsp);
+	}
+    }
 
     # get the graph information to fill the form, with probe id when
     # the graph is default, this allow to preselect to proper probe in
@@ -683,58 +1036,40 @@ FROM graphs g
 WHERE g.id = ?");
     $sth->execute($id);
 
-    my @row = $sth->fetchrow();
+    my ($n, $d, $q, $p) = $sth->fetchrow();
     $sth->finish;
 
-    $self->stash(graph_name => $row[0]);
-    $self->stash(graph_desc => $row[1]);
-    $self->stash(query => $row[2]);
-    # Put the linked probe in a controller parameter so that it is
-    # selected by the select_field tag helper in the template
-    if (defined $row[3]) {
-	$self->param('probe', $row[3]);
-	$form_data->{graph_is_default} = 1;
-	$form_data->{probe_id} = $row[3];
-    } else  {
-	$self->param('probe', '');
-	$form_data->{graph_is_default} = 0;
-	$form_data->{probe_id} = '';
+    #
+    if (!defined $n) {
+	$self->msg->error("Graph does not exist");
+
+	my $origin = $self->session->{origin} ||= 'draw_list';
+	delete $self->session->{origin};
+
+	return $self->redirect_to($origin, nsp => $nsp);
     }
 
-    # Get the default options and the graphs options and merge them to
-    # set all the values of form inputs
+    my $data = { graph_name => $n, graph_desc => $d, query => $q, probe_id => $p };
 
+    my $options = { };
     # default options
     $sth = $dbh->prepare(qq{SELECT option_name, default_value FROM flot_options});
     $sth->execute();
-
-    my $default_options = { };
-    while (my @row = $sth->fetchrow()) {
-	$default_options->{$row[0]} = $row[1];
+    while (my ($o, $v) = $sth->fetchrow()) {
+	$options->{$o} = $v;
     }
-
     $sth->finish;
 
-    # the graph options
+    # overwrite with the graph options
     $sth = $dbh->prepare(qq{SELECT fo.option_name, go.option_value
 FROM flot_options fo
   JOIN graphs_options go ON (go.id_option = fo.id)
   JOIN graphs g ON (go.id_graph = g.id) WHERE g.id = ?});
     $sth->execute($id);
-
-    my $graph_options = { };
-    while (my @row = $sth->fetchrow()) {
-	$graph_options->{$row[0]} = $row[1];
+    while (my ($o, $v) = $sth->fetchrow()) {
+	$options->{$o} = $v;
     }
-
     $sth->finish;
-
-    # merge them
-    foreach my $r ($default_options, $graph_options) {
-	while (my ($k, $v) = each %{$r}) {
-	    $form_data->{$k} = $v;
-	}
-    }
 
     # Get the list of probes for the select list in the save form
     $sth = $dbh->prepare("SELECT id, probe_name, version FROM probes");
@@ -742,15 +1077,20 @@ FROM flot_options fo
 
     my $probes = [ '' ];
     while (my @row = $sth->fetchrow()) {
-	push @{$probes}, [ $row[1].'('.$row[2].')'  => $row[0] ];
+	push @{$probes}, [ $row[1].' ('.$row[2].')'  => $row[0] ];
     }
-    $form_data->{probes} = $probes;
+    $data->{probes} = $probes;
 
-    $form_data->{save_action} = 'sc';
+    # Prepare the preselections without overwritting the controller params
+    $data->{'series-width'} = $options->{'series-width'};
+    $data->{'legend-cols'} = $options->{'legend-cols'};
+    $self->param('probe', $p) if (defined $p && !defined $self->param('probe'));
+    $self->param('graph-type', $options->{'graph-type'}) if (!defined $self->param('graph-type'));
+    foreach my $o ('stacked', 'filled', 'show-legend') {
+	$self->param($o, 'on') if ($options->{$o} eq 'on'&& !defined $self->param($o));
+    }
 
-
-
-    $self->stash(form_data => $form_data);
+    $self->stash(form_data => $data);
 
     # cleanup
     $dbh->commit;
@@ -759,212 +1099,81 @@ FROM flot_options fo
     $self->render;
 }
 
-sub save_edit {
+sub remove {
     my $self = shift;
 
-    # Retrieve the parameters in a hashref, it contains all the form
-    # data, it is better than $self->param which can't get multiple
-    # selections for the same input name ; here we get an arrayref
-    my $form_data = $self->req->params->to_hash;
-    my $form_err = { };
-
-    my $id = $self->param('id');
     my $nsp = $self->param('nsp');
+    my $id = $self->param('id');
 
-    # Do all error checking on input fields
-    my $err = 0;
+    # process form
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+	my $form_data = $self->req->params->to_hash;
 
-    if ($form_data->{graph_name} eq '') {
-	$self->msg->error("Empty Graph name");
-	$form_err->{graph_name} = 1;
-	$err = 1;
-    }
+	my $origin = $self->session->{origin};
+	delete $self->session->{origin};
 
-    if ($form_data->{query} eq '') {
-	$self->msg->error("Empty query");
-	$form_err->{query} = 1;
-	$err = 1;
-    }
+	# Cancel
+	if (exists $form_data->{cancel}) {
+	    $self->msg->info("Operation canceled");
 
-    if ($err) {
-	$self->stash(form_err => $form_err);
-
-	my $dbh = $self->database;
-	# get the list of probes for the select
-	my $sth = $dbh->prepare("SELECT id, probe_name, version FROM probes");
-	$sth->execute();
-
-	my $probes = [ '' ];
-	while (my @row = $sth->fetchrow()) {
-	    push @{$probes}, [ $row[1].' ('.$row[2].')' => $row[0] ];
+	    return $self->redirect_to($origin, nsp => $nsp);
 	}
-	$form_data->{probes} = $probes;
-	$dbh->commit;
+
+	# Remove the graphs from the saved list
+	my $dbh = $self->database;
+
+	my $sth = $dbh->prepare(qq{DELETE FROM custom_graphs
+WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?)
+AND id_graph = ?});
+	my $rb = 0;
+	$rb = 1 unless defined $sth->execute($nsp, $id);
+	$sth->finish;
+
+	if ($rb) {
+	    $self->msg->error("An error occured while saving. Action has been cancelled");
+	    $dbh->rollback;
+	} else {
+	    $dbh->commit;
+	}
 	$dbh->disconnect;
 
-	$self->stash(form_data => $form_data);
-	$self->stash(graph_name => $form_data->{graph_name});
-	$self->stash(graph_desc => $form_data->{graph_desc});
-	$self->stash(query => $form_data->{query});
-
-	return $self->render(template => 'draw/edit');
+	return $self->redirect_to($origin, nsp => $nsp);
     }
 
+    # retieve the graph info
     my $dbh = $self->database;
-    my $sth;
-    # Process the form. There are 4 possible actions:
-    # * Save the current graph (sc)
-    # * Overwrite the default graph (ow)
-    # * Save as a new graph (an)
-    # * Create a new default graph for probe (and)
-
-
-    if ($form_data->{save_action} eq 'sc') {
-	# if it is a default graph, create a new graph and update the
-	# custom_graphs link: do not ovewrite default here. Otherwise,
-	# update graphs
-	if ($form_data->{probe_id}) {
-	    $sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
-	    $sth->execute($form_data->{graph_name},
-			  $form_data->{graph_desc},
-			  $form_data->{query});
-
-	    my @row = $sth->fetchrow();
-	    my $new_id = $row[0];
-	    $sth->finish;
-
-	    $sth = $dbh->prepare(qq{UPDATE custom_graphs SET id_graph = ? WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?) AND id_graph = ?});
-	    $sth->execute($new_id, $nsp, $id);
-	    $sth->finish;
-
-	    # replace the graph id to set the options later
-	    $id = $new_id;
-	} else {
-	    $sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
-	    $sth->execute($form_data->{graph_name},
- 			  $form_data->{graph_desc},
-     			  $form_data->{query},
-     			  $id);
-     	    $sth->finish;
-	}
-    }
-
-    if ($form_data->{save_action} eq 'ow') {
-    	# overwrite the graph, update graphs
-	$sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
-	$sth->execute($form_data->{graph_name},
-		      $form_data->{graph_desc},
-		      $form_data->{query},
-		      $id);
-	$sth->finish;
-    }
-
-    if ($form_data->{save_action} eq 'an') {
-	# insert graph, add a custom link
-	$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
-	$sth->execute($form_data->{graph_name},
-			  $form_data->{graph_desc},
-			  $form_data->{query});
-
-	    my @row = $sth->fetchrow();
-	    my $new_id = $row[0];
-	    $sth->finish;
-
-	$sth = $dbh->prepare(qq{INSERT INTO custom_graphs (id_graph, id_set) VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))});
-	$sth->execute($new_id, $nsp);
-	$sth->finish;
-
-	# replace the graph id to set the options later
-	$id = $new_id;
-    }
-
-    if ($form_data->{save_action} eq 'and') {
-	# insert graph, add a custom link and a default link
-	$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
-	$sth->execute($form_data->{graph_name},
-			  $form_data->{graph_desc},
-			  $form_data->{query});
-
-	my @row = $sth->fetchrow();
-	my $new_id = $row[0];
-	$sth->finish;
-
-	$sth = $dbh->prepare(qq{INSERT INTO custom_graphs (id_graph, id_set) VALUES (?, (SELECT id FROM probe_sets WHERE nsp_name = ?))});
-	$sth->execute($new_id, $nsp);
-	$sth->finish;
-
-	$sth = $dbh->prepare(qq{INSERT INTO default_graphs (id_graph, id_probe) VALUES (?, ?)});
-	$sth->execute($new_id, $form_data->{probe});
-	$sth->finish;
-
-	# replace the graph id to set the options later
-	$id = $new_id;
-    }
-
-    # Save the options: retrieve the default options and the current
-    # options, then compare to the form data to only add/update non
-    # default values
-
-    # default options
-    $sth = $dbh->prepare(qq{SELECT id, option_name, default_value FROM flot_options});
-    $sth->execute();
-
-    my %default_options = ();
-    my %options_ids = ();
-    while (my @row = $sth->fetchrow()) {
-	$default_options{$row[1]} = $row[2];
-	$options_ids{$row[1]} = $row[0];
-    }
-    $sth->finish;
-
-    # the graph options
-    $sth = $dbh->prepare(qq{SELECT fo.option_name, go.option_value
-FROM flot_options fo
-  JOIN graphs_options go ON (go.id_option = fo.id)
-  JOIN graphs g ON (go.id_graph = g.id) WHERE g.id = ?});
+    my $sth = $dbh->prepare(qq{SELECT g.graph_name, g.description, g.query, p.id
+FROM graphs g
+  LEFT JOIN default_graphs dg ON (dg.id_graph = g.id)
+  LEFT JOIN probes p ON (p.id = dg.id_probe)
+WHERE g.id = ?});
     $sth->execute($id);
 
-    my %graph_options = ();
-    while (my @row = $sth->fetchrow()) {
-	$graph_options{$row[0]} = $row[1];
-    }
+    my ($n, $d, $q, $p) = $sth->fetchrow();
     $sth->finish;
-
-    # Prepare the three possible statements
-    my $ins = $dbh->prepare(qq{INSERT INTO graphs_options (id_graph, id_option, option_value) VALUES (?, ?, ?)});
-    my $upd = $dbh->prepare(qq{UPDATE graphs_options SET option_value = ? WHERE id_graph = ? AND id_option = ?});
-    my $del = $dbh->prepare(qq{DELETE FROM graphs_options WHERE id_graph = ? AND id_option = ?});
-    foreach my $opt (keys %default_options) {
-	if (defined $form_data->{$opt}) { # option is set in form
-	    if (defined $graph_options{$opt}) { # option is local to graph
-		if ($form_data->{$opt} ne $graph_options{$opt}
-		    and $form_data->{$opt} ne $default_options{$opt}) {
-		    $upd->execute($form_data->{$opt}, $id, $options_ids{$opt});
-		} elsif ($form_data->{$opt} eq $default_options{$opt}) {
-		    $del->execute($id, $options_ids{$opt});
-		}
-	    } elsif ($form_data->{$opt} ne $default_options{$opt}) {
-		# not in graph_options and non default value
-		$ins->execute($id, $options_ids{$opt}, $form_data->{$opt});
-	    }
-	} elsif ($default_options{$opt} eq 'on') {
-	    # 'off' checkboxes do not appear in form_data but default is 'on'
-	    $ins->execute($id, $options_ids{$opt}, 'off');
-	} else {
-	    # delete checkbox values gone 'off'
-	    $del->execute($id, $options_ids{$opt});
-	}
-    }
-    $ins->finish;
-    $upd->finish;
-    $del->finish;
-
     $dbh->commit;
     $dbh->disconnect;
 
-    return $self->redirect_to('draw_edit', nsp => $nsp, id => $id);
-}
+    if (!defined $n) {
+	$self->msg->error("Graph does not exist or it is not selected");
 
-sub remove { }
+	my $origin = $self->session->{origin} ||= 'draw_list';
+	delete $self->session->{origin};
+	return $self->redirect_to($origin, nsp => $nsp);
+    }
+
+    if (!defined $p) {
+	# deletion may make an orphan
+	my $changes = { add => [ ], remove => [ $id ], orphans => [ $id ] };
+
+	$self->session->{draw_list_save_changes} = $changes;
+	return $self->redirect_to('draw_orphans', nsp => $nsp);
+    }
+
+    $self->stash(graph => { name => $n, desc => $d, query => $q });
+
+    $self->render;
+}
 
 1;

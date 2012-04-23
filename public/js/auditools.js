@@ -15,7 +15,10 @@ $(function () {
             series: {
                 stack: ($('#stacked:checked').length == 1? true:null),
             },
-            xaxis: { mode: 'time' },
+            xaxis: {
+		mode: 'time',
+		timeformat: "%d/%m/%y %H:%M:%S"
+	    },
             selection: {
                 mode: "x",
                 color: "#444"

@@ -28,21 +28,13 @@ sub startup {
     # Documentation browser under "/perldoc" (this plugin requires Perl 5.10)
     $self->plugin('PODRenderer');
 
-    # # Hooks
-    # $self->hook(after_build_tx => sub {
-    # 		    my $tx = shift;
-    # 		    weaken $tx;
-    # 		    $tx->req->content->on(upgrade => sub { $tx->emit('request') });
-    # 		});
-
     # Routes
     my $r = $self->routes;
 
-    # Accueil et gestion des probe sets (Probe::Site)
+    # Home page and set management (Probe::Site)
     $r->route('/')->to('site#home')->name('home');
-#    $r->route('/upload')->via('post')->to('site#upload')->name('upload');
 
-    # Gestion des probes (Probe::Probes)
+    # Probe management (Probe::Probes)
     my $rw = $r->waypoint('/probes')         ->to('probes#list')   ->name('probes_list'); # link to add
 #    $rw->route('/add')                       ->to('probes#add')    ->name('probes_add');
     $rw->route('/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
@@ -58,18 +50,15 @@ sub startup {
 #    $gw->route('/:id/delete', id => qr/\d+/) ->to('graphs#remove') ->name('graphs_remove');
 
 
-    # Affichage des graphiques pour un set déterminé (Probe::Draw)
+    # Print and manipulate graphs for a specified set (Probe::Draw)
     $r->route('/draw/data')   ->via('post')              ->to('draw#data')   ->name('draw_data');
-
     my $dw = $r->waypoint('/draw/:nsp')                  ->to('draw#list')      ->name('draw_list');
     $dw->route('/save')       ->via('post')              ->to('draw#save_list') ->name('draw_list_save');
     $dw->route('/orphans')                               ->to('draw#orphans')   ->name('draw_orphans');
-    $dw->route('/show')                                  ->to('draw#show')      ->name('draw_show'); # tous les graphes sur une page
-    $dw->route('/add')        ->via('get')               ->to('draw#add')       ->name('draw_add'); # page à la auditools vide
-    $dw->route('/add')        ->via('post')              ->to('draw#save_add')  ->name('draw_add_save');
-    $dw->route('/edit/:id', id => qr/\d+/) ->via('get')  ->to('draw#edit')      ->name('draw_edit'); # page à la auditools avec requete
-    $dw->route('/edit/:id', id => qr/\d+/) ->via('post') ->to('draw#save_edit') ->name('draw_edit_save');
-    $dw->route('/remove/:id', id => qr/\d+/)             ->to('draw#remove')    ->name('draw_remove'); # remove from saved list with orphan management
+    $dw->route('/show')                                  ->to('draw#show')      ->name('draw_show');
+    $dw->route('/add')                                   ->to('draw#add')       ->name('draw_add');
+    $dw->route('/edit/:id', id => qr/\d+/)               ->to('draw#edit')      ->name('draw_edit');
+    $dw->route('/remove/:id', id => qr/\d+/)             ->to('draw#remove')    ->name('draw_remove');
 
 }
 

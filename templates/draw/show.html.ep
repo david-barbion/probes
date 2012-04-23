@@ -16,10 +16,14 @@
 <div id="graph">
   <p>
     <%= check_box selection => $graph{id}, checked => 'checked' %>
-    <%= $graph{desc} %>
+    <%= $graph{name} %>
     <%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => begin %>Edit<% end %>
     <%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => begin %>Remove<% end %>
   </p>
+
+  <p><%= $graph{desc} %></p>
+
+  <p id="log<%= $graph{id} %>"></p>
 
   <div id="graph<%= $graph{id} %>" style="width:700px;height:300px;"></div>
   <div id="legend<%= $graph{id} %>"></div>
@@ -27,9 +31,14 @@
   <script type="text/javascript">
     var options<%= $graph{id} %> = {
       legend: { show: true, container: $('#legend<%= $graph{id} %>') },
-      xaxis: { mode: 'time' },
+      xaxis: { mode: 'time', /* timeformat: "%d/%m/%y %H:%M:%S" */ },
       selection: { mode: "x", color: "#444" }
     };
+
+    var gopts<%= $graph{id} %> = <%== $graph{options}%>;
+
+    /* merge object2 into object1, recursively */
+    $.extend(true, options<%= $graph{id} %>, gopts<%= $graph{id} %>);
 
     $(document).ready(function(){
       $.plot($('#graph<%= $graph{id} %>'),<%== $graph{data} %>, options<%= $graph{id} %>);
@@ -54,5 +63,5 @@ TODO:
  - selection: -> ajax!
    - range
    - series
- - options
+ - hide select_field when empty
 %>
