@@ -32,7 +32,8 @@
         </div>
         <div id="menu">
           <ul>
-            <li><a href="<%= url_for '/' %>" title="Home">Home</a></h1>
+            <li><a href="<%= url_for '/' %>" title="Results">Results</a></h1>
+            <li><a href="<%= url_for 'probes_list' %>" title="Probes">Probes</a></h1>
           </ul>
         </div>
       </div> <!-- header -->
@@ -47,7 +48,7 @@
       </div> <!-- content -->
 
       <div id="footer">
-        <p class="copyright">Copyright &copy; 2011 <a href="http://orgrim.net" title="orgrim">Nicolas Thauvin</a></p>
+        <p class="copyright">Copyright &copy; 2012 <a href="http://orgrim.net" title="orgrim">Nicolas Thauvin</a></p>
         <p class="powered-by">powered by <a href="http://www.mojolicious.org" title="mojolicious web framework">mojolicious</a></p>
       </div> <!-- footer -->
     </div> <!-- page -->

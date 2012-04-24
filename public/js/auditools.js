@@ -172,7 +172,7 @@ $(function () {
         drawGraph(ranges.xaxis.from.toPrecision(13), ranges.xaxis.to.toPrecision(13));
     });
 
-    $('div#presets select').change(function () {
+    $('li#presets select').change(function () {
 	$('#query').text($(this).val());
     });
 

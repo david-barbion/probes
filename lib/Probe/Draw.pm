@@ -114,6 +114,15 @@ WHERE ps.nsp_name = ?});
 	}
     }
 
+    # Set name
+    $sth = $dbh->prepare(qq{SELECT set_name, description FROM probe_sets WHERE nsp_name = ?});
+    $sth->execute($nsp);
+    my ($set, $set_desc) = $sth->fetchrow();
+    $sth->finish;
+
+    $self->stash('set' => $set);
+    $self->stash('set_desc' => $set_desc);
+
     $dbh->commit;
     $dbh->disconnect;
 
@@ -665,6 +674,15 @@ FROM flot_options fo
 
     $dbh_data->commit;
     $dbh_data->disconnect;
+
+    # Set name
+    $sth = $dbh->prepare(qq{SELECT set_name, description FROM probe_sets WHERE nsp_name = ?});
+    $sth->execute($nsp);
+    my ($set, $set_desc) = $sth->fetchrow();
+    $sth->finish;
+
+    $self->stash('set' => $set);
+    $self->stash('set_desc' => $set_desc);
 
     $dbh->commit;
     $dbh->disconnect;

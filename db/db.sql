@@ -25,7 +25,8 @@ create table probes (
        probe_name text not null,
        description text,
        version text not null,
-       probe_query text not null
+       probe_query text not null,
+       ddl_query text
 );
 
 -- N to N link between probes and sets

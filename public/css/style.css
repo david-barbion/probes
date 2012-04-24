@@ -22,7 +22,8 @@ a:link.active, a:visited.active, a:hover {
 
 #page {
 	margin: 0px;
-	background: #000 url('../images/page_back.png');
+/*	background: #000 url('../images/page_back.png'); */
+	background-color: #aaa;
 	color: #000;
 }
 
@@ -32,14 +33,15 @@ a:link.active, a:visited.active, a:hover {
 }
 
 #footer {
-    background: #000 url('../images/footer_back.png') repeat-x 0 0;
+/*    background: #000 url('../images/footer_back.png') repeat-x 0 0; */
+    background-color: #000;
     margin: 0;
     padding: 10px 15px;
     font-size: 0.7em;
     color: #fff;
     clear: both;
     text-align: center;
-    height: 125px;
+/*    height: 125px; */
 }
 
 #copyleft {
@@ -69,7 +71,8 @@ a:link.active, a:visited.active, a:hover {
 }
     
 #logo {
-    background: #000 url('../images/header_back.png') repeat-x 0 0;
+    /* background: #000 url('../images/header_back.png') repeat-x 0 0; */
+    background-color: #000;
 }
 
 #logo h2 {
@@ -100,7 +103,8 @@ a:link.active, a:visited.active, a:hover {
 }
 
 #menu {
-    background: #464646 url('../images/logo_h2_back.png') repeat-x 0 0;
+    /* background: #464646 url('../images/logo_h2_back.png') repeat-x 0 0; */
+    background-color: #000;
     margin: 0;
     padding: 0;
 }
@@ -124,12 +128,13 @@ a:link.active, a:visited.active, a:hover {
     font-size: 0.8em;
     text-decoration: none;
     color: #fff;
-    padding: 10px 15px;
+    padding: 12px 15px;
     margin: 0;
 }
 #menu a:link.active, #menu a:visited.active, #menu a:hover {
-    color: #000;
-    background: #464646 url('../images/logo_h2_back_hover.png') repeat-x 0 0;
+    color: #fff;
+/*    background: #464646 url('../images/logo_h2_back_hover.png') repeat-x 0 0; */
+    background-color: #464646;
 }
 
 
@@ -138,12 +143,11 @@ a:link.active, a:visited.active, a:hover {
     padding: 10px;
     font-size: 0.8em;
     background-color: #fff;
-    border: 1px dotted #999;
+    border: 1px solid #333;
 }
 
 .block {
     padding: 10px;
-    margin-bottom: 15px;
 }
 
 .block a {
@@ -159,12 +163,9 @@ a:link.active, a:visited.active, a:hover {
 }
 
 .block h3, .block h4, .block h5, .block h6 {
-    margin: 15px 0 8px 0;
-    padding: 1px 0 1px 5px;
-    border-bottom: 1px solid #ddd;
-    border-top: 1px solid #ddd;
-    border-left: 15px solid #ddd;
-    border-right: 15px solid #ddd;
+    margin: 10px 0;
+    padding: 1px;
+/*    border-bottom: 1px solid #ddd; */
 }
 
 .block h2 { font-size: 1.5em; }
@@ -176,7 +177,7 @@ a:link.active, a:visited.active, a:hover {
 .block_head {
     font-size: 0.9em;
     margin: 3px 0;
-    padding: 0 5px;
+    padding: 0;
 }
 
 .block_head ul {
@@ -184,12 +185,19 @@ a:link.active, a:visited.active, a:hover {
     padding: 0;
 }
 
-.block_head li {
+.block_head ul li {
     display: inline;
     list-style-type: none;
     margin-right: 10px;
-    font-size: 0.9em;
+    font-size: 0.95em;
 }
+
+.block_head ul a {
+    font-weight: normal;
+    display: inline;
+}
+
+
 
 .block_head li.date {
     font-style: italic;
@@ -217,34 +225,38 @@ a:link.active, a:visited.active, a:hover {
     list-style-type: circle;
 }
 
-.block_body table {
+table.block_table {
     border-collapse: collapse;
     border-spacing: 0px;
     margin: 10px;
 }
 
-.block_body th {
+.block_table th {
     border: 1px solid #333;
     background-color: #666;
-    font-size: 0.8em;
     padding: 3px 5px;
     color: #fff;
 }
 
-.block_body td {
+.block_table td {
     border: 1px solid #333;
-    font-size: 0.8em;
     padding: 3px 5px;
 }
 
-.block_body td ul {
+.block_table td ul {
     margin: 5px;
     padding: 0;
 }
 
-.block_body td li {
+.block_table td li {
     list-style-type: circle;
     list-style-position: inside;
+}
+
+ul.submenu {
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+    text-align: right;
 }
 
 .form {
@@ -485,4 +497,74 @@ a:link.active, a:visited.active, a:hover {
 
 #moto-bottom a {
     color: #ddd;
+}
+
+.graph {
+    background-color: #fff;
+    padding: 10px;
+    margin: 10px;
+}
+
+form.cmxform {
+    width: 750px;
+}
+
+form.cmxform fieldset {
+  margin-top: 10px;
+  border: 0;
+  border-top: 1px solid #ddd;
+}
+form.cmxform legend {
+  padding: 0 2px;
+  font-weight: bold;
+}
+form.cmxform label {
+  display: inline-block;
+  line-height: 1.8;
+  vertical-align: top;
+}
+form.cmxform fieldset ol {
+  margin: 0;
+  padding: 0;
+}
+form.cmxform fieldset li {
+  list-style: none;
+  padding: 5px;
+  margin: 0;
+  border-bottom: 1px solid #ddd;
+}
+form.cmxform fieldset li input,
+form.cmxform fieldset li textarea {
+    border: 1px solid #aaa;
+    font-family: monospace;
+}
+
+form.cmxform fieldset fieldset {
+  border: none;
+  margin: 3px 0 0;
+}
+form.cmxform fieldset fieldset legend {
+  padding: 0 0 5px;
+  font-weight: normal;
+}
+form.cmxform fieldset fieldset label {
+  display: block;
+  width: auto;
+  margin-left: 123px; /* Width plus 3 (html space) */
+}
+form.cmxform label {
+  width: 120px; /* Width of labels */
+}
+form.cmxform fieldset fieldset label.radioselect {
+    margin-top: 2px;
+    margin-left: 149px;
+}
+form.cmxform div.submit {
+    margin-bottom: 20px;
+    margin-left: 15px;
+}
+
+#graph_box {
+    padding: 10px;
+    font-size: 0.8em;
 }

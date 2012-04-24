@@ -1,20 +1,23 @@
 % layout 'default';
-<h2><%= @{$probe}[0] %></h2>
+% my %p = %{stash 'probe'};
+<div class="block">
+  <h2><%= $p{name} %></h2>
 
-<div id="probe">
-  <% if (scalar(@{$probe})) { %>
-  <ul>
-    <li>Name: <%= @{$probe}[0] %></li>
-    <li>Description: <%= @{$probe}[1] %></li>
-    <li>Minimum version: <%= @{$probe}[2] %></li>
-    <li>Request: <pre><%= @{$probe}[3] %></pre></li>
-  </ul>
-  <% } else { %>
-  <p>Unknown probe</p>
-  <% } %>
-</div>
+  <div id="page_nav" class="block_head">
+    <ul class="submenu">
+      <li><%= link_to probes_add => (class => "link") => begin %>New probe<% end %></li>
+      <li><%= link_to probes_edit => { id => $p{id} } => (class => "link") => begin %>Edit<% end %></li>
+      <li><%= link_to probes_remove => { id => $p{id} } => (class => "link") => begin %>Delete<% end %></li>
+    </ul>
+  </div>
 
-<div>
-  <a href="<%== url_for "/probes/${id}/edit" %>" title="Edit">Edit</a>
-  <a href="<%== url_for "/probes/${id}/delete" %>" title="Delete">Delete</a>
+  <div id="probe" class="block_body">
+    <ul>
+      <li>Name: <%= $p{name} %></li>
+      <li>Description: <%= $p{desc} %></li>
+      <li>Minimum version: <%= $p{version} %></li>
+      <li>Probe query: <pre><%= $p{probeq} %></pre></li>
+      <li>Target table: <pre><%= $p{ddlq} %></pre></li>
+    </ul>
+  </div>
 </div>

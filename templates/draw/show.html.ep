@@ -1,61 +1,77 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
-<h2><%= $nsp %></h2>
+<div class="block">
+  <h2><%= $set %></h2>
 
-<div id="nav">
-  <ul>
-    <li><%= link_to draw_list => { nsp => $nsp } => begin %>Back to list<% end %></li>
-    <li><%= link_to draw_add => { nsp => $nsp } => begin %>New graph<% end %></li>
-  </ul>
+  <p><%= $set_desc %></p>
+
+  <div id="page_nav" class="block_head">
+    <ul class="submenu">
+      <li><%= link_to draw_list => { nsp => $nsp } => (class => "link") => begin %>Back to list<% end %></li>
+      <li><%= link_to draw_add => { nsp => $nsp } => (class => "link") => begin %>New graph<% end %></li>
+    </ul>
+  </div>
 </div>
 
 % if (scalar(@{$graphs})) {
 %= form_for draw_show => (method => 'POST') => begin
 %     for my $g (@graphs) {
 %         my %graph = %{$g};
-<div id="graph">
-  <p>
-    <%= check_box selection => $graph{id}, checked => 'checked' %>
-    <%= $graph{name} %>
-    <%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => begin %>Edit<% end %>
-    <%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => begin %>Remove<% end %>
-  </p>
+<div id="graph" class="block">
+  <div class="block_head">
+    <h3><%= check_box selection => $graph{id}, checked => 'checked' %>
+      <%= $graph{name} %></h3>
+    <ul class="submenu">
+      <li><%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Edit<% end %></li>
+      <li><%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Remove<% end %></li>
+    </ul>
+  </div>
 
-  <p><%= $graph{desc} %></p>
+  <div class="block_body">
+    <p><%= $graph{desc} %></p>
 
-  <p id="log<%= $graph{id} %>"></p>
+    <p id="log<%= $graph{id} %>"></p>
 
-  <div id="graph<%= $graph{id} %>" style="width:700px;height:300px;"></div>
-  <div id="legend<%= $graph{id} %>"></div>
+    <div class="graph">
+      <div id="graph<%= $graph{id} %>" style="width:700px;height:300px;"></div>
+      <div id="legend<%= $graph{id} %>"></div>
+    </div>
 
-  <script type="text/javascript">
-    var options<%= $graph{id} %> = {
+    <script type="text/javascript">
+      var options<%= $graph{id} %> = {
       legend: { show: true, container: $('#legend<%= $graph{id} %>') },
       xaxis: { mode: 'time', /* timeformat: "%d/%m/%y %H:%M:%S" */ },
       selection: { mode: "x", color: "#444" }
-    };
+      };
 
-    var gopts<%= $graph{id} %> = <%== $graph{options}%>;
+      var gopts<%= $graph{id} %> = <%== $graph{options}%>;
 
-    /* merge object2 into object1, recursively */
-    $.extend(true, options<%= $graph{id} %>, gopts<%= $graph{id} %>);
+      /* merge object2 into object1, recursively */
+      $.extend(true, options<%= $graph{id} %>, gopts<%= $graph{id} %>);
 
-    $(document).ready(function(){
+      $(document).ready(function(){
       $.plot($('#graph<%= $graph{id} %>'),<%== $graph{data} %>, options<%= $graph{id} %>);
-    });                
-  </script>
+      });                
+    </script>
+  </div>
 </div>
 %     }
 
 <div style="clear: both;">&nbsp;</div>
 
-<div id="save">
-  <p>Select new graphs:</p> <%= select_field new_graphs => $new_graphs, multiple => 'multiple', size => 5 %>
-  <p><%= submit_button 'Update selection', name => 'update' %></p>
+<div id="save" class="block">
+  % if (scalar(@{$new_graphs})) {
+  <div class="block_body">
+    <p>Select new graphs:</p> <%= select_field new_graphs => $new_graphs, multiple => 'multiple', size => 5 %>
+  </div>
+  % }
+  <%= submit_button 'Update selection', name => 'update' %>
 </div>
 % end
 % } else {
-<p>No graphs found</p>
+<div class="block">
+  <p class="block_body">No graphs found</p>
+</div>
 % }
 
 <%#

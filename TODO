@@ -1,14 +1,12 @@
 everything:
 - check db error, at least for writes and query run on user input
 - add messages where needed
-- rework CSS for sub menus
 - add breadcrumbs ? or page tree path ?
 
 draw show
 - add interaction:
   * interval selection
   * show/hide series ?
-- hide select_field when empty
 - catch errors in graph query execution and display a message
 
 draw data
@@ -17,6 +15,5 @@ draw data
 draw edit
 
 draw add
-- factorize templates with edit ?
 
 draw remove

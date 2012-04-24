@@ -29,16 +29,31 @@ sub list {
 sub show {
     my $self = shift;
 
-    my $sth = $self->database;
-    my $sth = $dbh->prepare("SELECT probe_name, description, version, probe_query FROM probes WHERE id = ?");
-    $sth->execute($self->param('id'));
-    my @row = $sth->fetchrow();
+    my $id = $self->param('id');
+
+    my $dbh = $self->database;
+    my $sth = $dbh->prepare("SELECT probe_name, description, version, probe_query, ddl_query FROM probes WHERE id = ?");
+    $sth->execute($id);
+
+    my ($n, $d, $v, $pq, $dq) = $sth->fetchrow();
 
     $sth->finish;
     $dbh->commit;
     $dbh->disconnect;
 
-    $self->stash(probe => \@row);
+    if (!defined $n) {
+	$self->msg->error("Graph does not exist");
+
+	my $origin = $self->session->{origin} ||= 'probes_list';
+	delete $self->session->{origin};
+	return $self->redirect_to($origin);
+    }
+
+    $self->stash(probe => { name => $n,
+			    desc => $d,
+			    version => $v,
+			    probeq => $pq,
+			    ddlq => $dq });
 
     $self->render();
 

@@ -1,24 +1,16 @@
-#query { display: block }
-input, textarea { border: 1px solid black }
-label[for=series-width] { display:table-row }
-label[for=show-legend] { display:table-row }
-label[for=legend-cols] { display:table-row }
-#add_graph { display: table-row }
-
+ul#legend {
+	margin-top: 5px;
+}
 ul#legend li { margin: 2px }
 ul#legend li label { display: inline }
 
-#graph_box {
-    margin-top: 25px;
-    padding: 10px
-}
 #graph_area {
     width: 100%;
-    height: 100%
+    height: 100%;
 }
 
-#legend { list-style: none }
-
+#legend li { list-style: none }
+#legend label { width: auto; }
 #legend li.sortable {
     padding-left: 10px;
     padding-right: 10px
@@ -26,11 +18,10 @@ ul#legend li label { display: inline }
 
 #legend li.sortable label {
     display: table-cell;
-    vertical-align: middle;
+    vertical-align: top;
 }
 div.legend-color {
     display: table-cell;
-    border: 1px solid #ccc;
 }
 div.legend-color div {
     margin: 2px;
@@ -47,4 +38,3 @@ div.legend-color div {
     width: 100px;
 }
 
-a.preset div { display: none }

@@ -36,10 +36,10 @@ sub startup {
 
     # Probe management (Probe::Probes)
     my $rw = $r->waypoint('/probes')         ->to('probes#list')   ->name('probes_list'); # link to add
-#    $rw->route('/add')                       ->to('probes#add')    ->name('probes_add');
-    $rw->route('/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
-#    $rw->route('/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
-#    $rw->route('/:id/delete', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
+    $rw->route('/add')                       ->to('probes#add')    ->name('probes_add');
+    $rw->route('/:id', id => qr/\d+/)   ->to('probes#show')   ->name('probes_show');
+    $rw->route('/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
+    $rw->route('/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
 
 
     # Gestion de tous les graphs même les customs graphs (Probe::Graphs)
