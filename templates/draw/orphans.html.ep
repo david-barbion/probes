@@ -1,31 +1,39 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
-<h2>Discard custom graphs</h2>
+<div class="block">
+  <h2>Discard custom graphs?</h2>
+</div>
 
-<div>
-  <%= form_for draw_orphans => (method => 'POST') => begin %>
+<div class="block">
+  <%= form_for draw_orphans => (method => 'POST', class => 'cmxform') => begin %>
 % foreach my $g (@graphs) {
 %     my %graph = %{$g};
-  <div>
+  <div class="block_body">
     <h3><%= $graph{name} %></h3>
     <p><%= $graph{desc} %></p>
     <p><pre><%= $graph{query} %></pre></p>
-    <ul>
-      <li>
-	<%= radio_button qq{action$graph{id}} => 'remove', id => qq{del$graph{id}}, checked => 'checked' %>
-	<label for="del<%= $graph{id} %>">Remove this custom graph</label>
-      </li>
-      <li>
-	<%= radio_button qq{action$graph{id}} => 'link', id => qq{link$graph{id}} %>
-	<label for="link<%= $graph{id} %>">Keep the custom graph for probe:</label>
-	<%= select_field qq{probe$graph{id}} => $probes %>
-      </li>
-    </ul>
   </div>
+
+  <fieldset>
+    <legend>Choose an action for "<%= $graph{name} %>"</legend>
+    <ol>
+      <li>
+	<fieldset>
+	  <label>
+	    <%= radio_button qq{action$graph{id}} => 'remove', id => qq{del$graph{id}}, checked => 'checked' %>
+	    Remove this custom graph</label>
+	  <label><%= radio_button qq{action$graph{id}} => 'link', id => qq{link$graph{id}} %>
+	    Keep the custom graph for probe:</label>
+	  <label class="radioselect"><%= select_field qq{probe$graph{id}} => $probes %></label>
+	</fieldset>
+      </li>
+    </ol>
+  </fieldset>
 % }
 
-  <div id="save">
-    <p><%= submit_button 'Confirm', name => 'save' %><%= submit_button 'Cancel', name => 'cancel' %></p>
+  <div class="submit">
+    <%= submit_button 'Confirm', name => 'save' %>
+    <%= submit_button 'Cancel', name => 'cancel' %>
   </div>
   <% end %>
 </div>

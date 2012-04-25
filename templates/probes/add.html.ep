@@ -1,0 +1,46 @@
+% layout 'default';
+<div class="block">
+  <h2>Add a new probe</h2>
+
+  <div id="page_nav" class="block_head">
+    <ul class="submenu">
+      <li><%= link_to probes_list => (class => "link") => begin %>Back to list<% end %></li>
+    </ul>
+  </div>
+</div>
+
+<div id="form" class="block">
+  <%= form_for probes_add => (method => 'POST', class => 'cmxform') => begin %>
+
+  <fieldset>
+    <legend>Probe definition</legend>
+    <ol>
+      <li>
+	<label for="name">Probe name:</label>
+	<%= text_field 'probe_name', size => 72, id => 'name' %>
+      </li>
+      <li>
+	<label for="desc">Description:</label>
+	<%= text_area probe_desc => (rows => 3, cols => 70, id => 'desc') => begin %><% end %>
+      </li>
+      <li>
+	<label for="version">Version:</label>
+	<%= text_field 'probe_version', size => 5, id => 'version' %>
+      </li>
+      <li>
+	<label for="query">Query:</label>
+	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><% end %>
+      </li>
+      <li>
+	<label for="ddl">Target table:</label>
+	<%= text_area ddl_query => (rows => 5, cols => 70, id => 'ddl') => begin %><% end %>
+      </li>
+    </ol>
+  </fieldset>
+
+  <div class="submit">
+    <%= submit_button 'Save', name => 'save' %>
+    <%= submit_button 'Cancel', name => 'cancel' %>
+  </div>
+  <% end %>
+</div>

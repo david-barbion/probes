@@ -71,16 +71,16 @@
       <li>
 	<fieldset>
 	  <label><%= radio_button save_action => 'sc', checked => 'checked', id => 'savegraph' %>
-	    Replace the current graph</label>
+	    Fork the current graph and use the new one in the selection</label>
 
 % if (defined $form{probe_id}) {
       <label><%= radio_button save_action => 'ow', id => 'overwrite' %>
 	Overwrite the default graph</label>
 % }
       <label><%= radio_button save_action => 'an', id => 'asnew' %>
-	Save as a new graph</label>
+	Save as a new graph and select it</label>
       <label><%= radio_button save_action => 'and', id => 'asnewdef' %>
-	  Create a new default graph for probe:</label>
+	  Create a new default graph for a probe:</label>
 	<label class="radioselect"><%= select_field probe => $form{probes}, selected => $form{probe} %></label>
       </li>
     </ol>

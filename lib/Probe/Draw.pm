@@ -1123,65 +1123,35 @@ sub remove {
     my $nsp = $self->param('nsp');
     my $id = $self->param('id');
 
-    # process form
-    my $method = $self->req->method;
-    if ($method =~ m/^POST$/i) {
-	my $form_data = $self->req->params->to_hash;
+    my $origin = $self->session->{origin} ||= 'draw_list';
+    delete $self->session->{origin};
 
-	my $origin = $self->session->{origin};
-	delete $self->session->{origin};
-
-	# Cancel
-	if (exists $form_data->{cancel}) {
-	    $self->msg->info("Operation canceled");
-
-	    return $self->redirect_to($origin, nsp => $nsp);
-	}
-
-	# Remove the graphs from the saved list
-	my $dbh = $self->database;
-
-	my $sth = $dbh->prepare(qq{DELETE FROM custom_graphs
-WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?)
-AND id_graph = ?});
-	my $rb = 0;
-	$rb = 1 unless defined $sth->execute($nsp, $id);
-	$sth->finish;
-
-	if ($rb) {
-	    $self->msg->error("An error occured while saving. Action has been cancelled");
-	    $dbh->rollback;
-	} else {
-	    $dbh->commit;
-	}
-	$dbh->disconnect;
-
-	return $self->redirect_to($origin, nsp => $nsp);
-    }
-
-    # retieve the graph info
+    # Check if the graph is linked to a probe
     my $dbh = $self->database;
-    my $sth = $dbh->prepare(qq{SELECT g.graph_name, g.description, g.query, p.id
+    my $sth = $dbh->prepare(qq{SELECT g.id, p.id
 FROM graphs g
   LEFT JOIN default_graphs dg ON (dg.id_graph = g.id)
   LEFT JOIN probes p ON (p.id = dg.id_probe)
 WHERE g.id = ?});
     $sth->execute($id);
 
-    my ($n, $d, $q, $p) = $sth->fetchrow();
-    $sth->finish;
-    $dbh->commit;
-    $dbh->disconnect;
+    my ($g, $p) = $sth->fetchrow();
 
-    if (!defined $n) {
+    $sth->finish;
+
+    if (!defined $g) {
+	$dbh->commit;
+	$dbh->disconnect;
+
 	$self->msg->error("Graph does not exist or it is not selected");
 
-	my $origin = $self->session->{origin} ||= 'draw_list';
-	delete $self->session->{origin};
 	return $self->redirect_to($origin, nsp => $nsp);
     }
 
     if (!defined $p) {
+	$dbh->commit;
+	$dbh->disconnect;
+
 	# deletion may make an orphan
 	my $changes = { add => [ ], remove => [ $id ], orphans => [ $id ] };
 
@@ -1189,9 +1159,23 @@ WHERE g.id = ?});
 	return $self->redirect_to('draw_orphans', nsp => $nsp);
     }
 
-    $self->stash(graph => { name => $n, desc => $d, query => $q });
+    # Remove the graphs from the saved list
+    $sth = $dbh->prepare(qq{DELETE FROM custom_graphs
+WHERE id_set = (SELECT id FROM probe_sets WHERE nsp_name = ?)
+AND id_graph = ?});
+    my $rb = 0;
+    $rb = 1 unless defined $sth->execute($nsp, $id);
+    $sth->finish;
 
-    $self->render;
+    if ($rb) {
+	$self->msg->error("An error occured while saving. Action has been cancelled");
+	$dbh->rollback;
+    } else {
+	$dbh->commit;
+    }
+    $dbh->disconnect;
+
+    return $self->redirect_to($origin, nsp => $nsp);
 }
 
 1;
