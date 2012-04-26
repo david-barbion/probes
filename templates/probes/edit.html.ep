@@ -22,6 +22,10 @@
 	<%= text_field probe_name => $p{name}, size => 72, id => 'name' %>
       </li>
       <li>
+	<label for="type">Probe type (e.g. SQL or System):</label>
+	<%= text_field probe_type => $p{type}, size => 72, id => 'type' %>
+      </li>
+      <li>
 	<label for="desc">Description:</label>
 	<%= text_area probe_desc => (rows => 3, cols => 70, id => 'desc') => begin %><%== $p{desc} %><% end %>
       </li>
@@ -31,11 +35,23 @@
       </li>
       <li>
 	<label for="query">Query:</label>
-	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><%== $p{probe_query} %><% end %>
+	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><%== $p{query} %><% end %>
+      </li>
+      <li>
+	<label for="preload">Preload command, to transform the data into CSV:</label>
+	<%= text_area preload => (rows => 5, cols => 70, id => 'preload') => begin %><%== $p{preload} %><% end %>
       </li>
       <li>
 	<label for="ddl">Target table:</label>
-	<%= text_area ddl_query => (rows => 5, cols => 70, id => 'ddl') => begin %><%== $p{ddl_query} %><% end %>
+	<%= text_area ddl_query => (rows => 5, cols => 70, id => 'ddl') => begin %><%== $p{ddlq} %><% end %>
+      </li>
+      <li>
+	<label for="path">Path in archive:</label>
+	<%= text_field 'source_path' => $p{path}, size => 72, id => 'path' %>
+      </li>
+      <li>
+	<label for="enable">Enable: </label>
+	<%= check_box enable => 'on', id => 'enable' %>
       </li>
     </ol>
   </fieldset>

@@ -13,11 +13,21 @@
 
   <div id="probe" class="block_body">
     <ul>
-      <li>Name: <%= $p{name} %></li>
-      <li>Description: <%= $p{desc} %></li>
-      <li>Minimum version: <%= $p{version} %></li>
-      <li>Probe query: <pre><%= $p{probeq} %></pre></li>
-      <li>Target table: <pre><%= $p{ddlq} %></pre></li>
+      <li><span class="bold">Name:</span> <%= $p{name} %></li>
+      <li><span class="bold">Type:</span> <%= $p{type} %></li>
+      <li><span class="bold">Description:</span> <%= $p{desc} %></li>
+      <li><span class="bold">Minimum version:</span> <%= $p{version} %></li>
+      <li><span class="bold">Probe query/command:</span>
+	<% if (defined $p{query}) { %>
+	<pre><%= $p{query} %></pre>
+	<% } %></li>
+      <li><span class="bold">Preload command:</span>
+	<% if (defined $p{preload}) { %>
+	<pre><%= $p{preload} %></pre>
+	<% } %></li>
+      <li><span class="bold">Target table:</span> <pre><%= $p{ddlq} %></pre></li>
+      <li><span class="bold">Path in archive:</span> <%= $p{path} %></li>
+      <li><span class="bold">Enabled:</span> <% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></li>
     </ul>
   </div>
 </div>

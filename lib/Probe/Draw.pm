@@ -856,6 +856,7 @@ sub edit {
     my $nsp = $self->param('nsp');
     my $id = $self->param('id');
 
+    my $e = 0;
 
     my $method = $self->req->method;
     if ($method =~ m/^POST$/i) {
@@ -870,7 +871,6 @@ sub edit {
 	}
 
 	# Error processing
-	my $e = 0;
 	if ($form_data->{graph_name} eq '') {
 	    $self->msg->error("Empty Graph name");
 	    $e = 1;
@@ -1105,7 +1105,7 @@ FROM flot_options fo
     $self->param('probe', $p) if (defined $p && !defined $self->param('probe'));
     $self->param('graph-type', $options->{'graph-type'}) if (!defined $self->param('graph-type'));
     foreach my $o ('stacked', 'filled', 'show-legend') {
-	$self->param($o, 'on') if ($options->{$o} eq 'on'&& !defined $self->param($o));
+	$self->param($o, 'on') if ($options->{$o} eq 'on' && !$e);
     }
 
     $self->stash(form_data => $data);

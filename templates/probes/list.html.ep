@@ -17,6 +17,7 @@
 	<th>Description</th>
 	<th>Minimum version</th>
 	<th>&nbsp;</th>
+	<th>&nbsp;</th>
       </tr>
       <% foreach my $p (@probes) { %>
       <%     my %line = %{$p}; %>
@@ -32,7 +33,9 @@
 	</td>
 	<td>
 	  <%= link_to probes_edit => { id => $line{id} } => begin %>Edit<% end %>
-	  <%= link_to probes_remove => { id => $line{id} } => begin %>Delete<% end %>
+	</td>
+	<td>
+	  <% unless ($line{enabled}) { %>Disabled<% } else { %>&nbsp;<% } %>
 	</td>
       </tr>
       <% } %>

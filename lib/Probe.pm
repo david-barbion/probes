@@ -31,7 +31,7 @@ sub startup {
     # Routes
     my $r = $self->routes;
 
-    # Home page and set management (Probe::Site)
+    # Home page and set management (Probe::Site) + upload + script
     $r->route('/')->to('site#home')->name('home');
 
     # Probe management (Probe::Probes)
@@ -39,7 +39,8 @@ sub startup {
     $rw->route('/add')                       ->to('probes#add')    ->name('probes_add');
     $rw->route('/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
     $rw->route('/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
-    $rw->route('/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
+    # $rw->route('/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
+    # $rw->route('/script')     ->via('post')  ->to('probes#script') ->name('probes_script');
 
     # Print and manipulate graphs for a specified set (Probe::Draw)
     $r->route('/draw/data')   ->via('post')  ->to('draw#data')      ->name('draw_data');
