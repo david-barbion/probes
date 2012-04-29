@@ -27,7 +27,7 @@
       </li>
       <li>
 	<label for="desc">Description:</label>
-	<%= text_area probe_desc => (rows => 3, cols => 70, id => 'desc') => begin %><%== $p{desc} %><% end %>
+	<%= text_area probe_desc => (rows => 3, cols => 70, id => 'desc') => begin %><% if (defined $p{desc}) { %><%== $p{desc} %><% } %><% end %>
       </li>
       <li>
 	<label for="version">Version:</label>
@@ -35,11 +35,11 @@
       </li>
       <li>
 	<label for="query">Query:</label>
-	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><%== $p{query} %><% end %>
+	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><% if (defined $p{query}) { %><%== $p{query} %><% } %><% end %>
       </li>
       <li>
 	<label for="preload">Preload command, to transform the data into CSV:</label>
-	<%= text_area preload => (rows => 5, cols => 70, id => 'preload') => begin %><%== $p{preload} %><% end %>
+	<%= text_area preload => (rows => 5, cols => 70, id => 'preload') => begin %><% if (defined $p{preload}) { %><%== $p{preload} %><% } %><% end %>
       </li>
       <li>
 	<label for="ddl">Target table:</label>

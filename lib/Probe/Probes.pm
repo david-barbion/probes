@@ -3,7 +3,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
 
-
 sub list {
     my $self = shift;
 
@@ -269,6 +268,101 @@ sub edit {
 #     my $id = $self->param('id');
 
 # }
+
+sub script {
+    my $self = shift;
+
+    my $e = 0;
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+        # process the input data
+        my $form_data = $self->req->params->to_hash;
+
+	# Error processing
+	unless (defined $form_data->{selection}) {
+	    $self->msg->error("Nothing selected");
+	    $e = 1;
+	}
+
+	unless ($e) {
+	    my %ids;
+
+	    if (ref $form_data->{selection} eq '') {
+		$ids{$form_data->{selection}} = 1;
+	    } else {
+		%ids = map { $_ => 1 } @{$form_data->{selection}};
+	    }
+
+	    my $dbh = $self->database;
+	    my $sth = $dbh->prepare(qq{SELECT probe_name, probe_type, command, source_path FROM probes WHERE enabled = true AND id = ?});
+	    my $commands = [ ];
+	    foreach my $id (keys %ids) {
+		$sth->execute($id);
+		my ($n, $t, $c, $p) = $sth->fetchrow();
+		push @{$commands}, { probe => $n,
+				     type => $t,
+				     command => $c,
+				     output => $p } if defined $n;
+	    }
+	    $sth->finish;
+	    $dbh->commit;
+	    $dbh->disconnect;
+
+	    # Compute the list of directory to create inside the archive from the source_path of each probe
+
+	    # Create the archive META file containing everything needed to load the result
+
+	    my $sql;
+	    # put the stuff in the template script
+	    foreach my $c (@{$commands}) {
+		if ($c->{type} =~ m/^SQL$/i) {
+		    # Generate a psql script:
+		    # - double escape  interpreted by psql,
+		    # - single escape what should interpreted by the probe runner
+		    $sql .= qq{-- $c->{probe}
+-- \\\\o | cat >> \$\{output_dir\}/$c->{output}
+\\\\o | (mkdir -p \\\$(dirname \$\{output_dir\}/$c->{output}) && cat >> \$\{output_dir\}/$c->{output})
+$c->{command};
+
+};
+#		} elsif ($c->{type} =~ m/^system$/) { # prepare a data struct for probe_runner to run system commands
+#		} elsif ($->{type} =~ m/^sysstat$/) {
+		    # tell the probe runner to search for sa files
+		}
+	    }
+
+	    $self->stash(sql => $sql);
+
+	    # Make the browser save the file with a proper filename
+	    $self->tx->res->headers->header('Content-Disposition' => 'attachment; filename=probe_runner.pl');
+
+	    return $self->render(template => 'script/probe_runner', format => 'pl');
+	}
+    }
+
+    my $dbh = $self->database;
+    # get the list of enabled probes
+    my $sth = $dbh->prepare(qq{SELECT id, probe_name, probe_type, description, version FROM probes WHERE enabled = true ORDER BY 2, 3});
+    $sth->execute;
+    my $probes = [ ];
+    while (my ($i, $n, $t, $d, $v) = $sth->fetchrow()) {
+	push @{$probes}, { id => $i,
+			   name => $n,
+			   type => $t,
+			   desc => $d,
+			   version => $v
+			 };
+    }
+    $sth->finish;
+    $dbh->commit;
+    $dbh->disconnect;
+
+    $self->stash(probes => $probes);
+
+    $self->render;
+    # create a form to select the probes
+    # generate the portion of the script
+}
 
 1;
 

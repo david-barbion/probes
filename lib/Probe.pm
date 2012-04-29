@@ -28,6 +28,9 @@ sub startup {
     # Documentation browser under "/perldoc" (this plugin requires Perl 5.10)
     $self->plugin('PODRenderer');
 
+    # Add a perl mime type for the script generation
+    $self->types->type(pl => 'application/x-perl');
+
     # Routes
     my $r = $self->routes;
 
@@ -40,7 +43,7 @@ sub startup {
     $rw->route('/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
     $rw->route('/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
     # $rw->route('/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
-    # $rw->route('/script')     ->via('post')  ->to('probes#script') ->name('probes_script');
+    $rw->route('/script')                    ->to('probes#script') ->name('probes_script');
 
     # Print and manipulate graphs for a specified set (Probe::Draw)
     $r->route('/draw/data')   ->via('post')  ->to('draw#data')      ->name('draw_data');

@@ -6,41 +6,45 @@
   <div id="page_nav" class="block_head">
     <ul class="submenu">
       <li><%= link_to probes_add => (class => "link") => begin %>Add a new probe<% end %></li>
-      <li><%= link_to probes_script => (class => "link") => begin %>Generate script<% end %></li>
     </ul>
   </div>
 
   <div id="probes" class="block_body">
     <% if (scalar(@probes)) { %>
+    <%= form_for probes_script => (method => 'POST') => begin %>
     <table class="block_table">
       <tr>
+	<th>&nbsp;</th>
 	<th>Probe</th>
 	<th>Description</th>
-	<th>Minimum version</th>
-	<th>&nbsp;</th>
-	<th>&nbsp;</th>
+	<th>Type</th>
+	<th>Version</th>
       </tr>
       <% foreach my $p (@probes) { %>
       <%     my %line = %{$p}; %>
       <tr>
 	<td>
-	  <%= link_to probes_show => { id => $line{id} } => begin %><%= $line{probe_name} %><% end %>
+	  <%= check_box selection => $line{id} %>
 	</td>
 	<td>
-	  <%= $line{description} %>
+	  <%= link_to probes_show => { id => $line{id} } => begin %><%= $line{name} %><% end %>
+	</td>
+	<td>
+	  <%= $line{desc} %>
+	</td>
+	<td>
+	  <%= $line{type} %>
 	</td>
 	<td>
 	  <%= $line{version} %>
 	</td>
-	<td>
-	  <%= link_to probes_edit => { id => $line{id} } => begin %>Edit<% end %>
-	</td>
-	<td>
-	  <% unless ($line{enabled}) { %>Disabled<% } else { %>&nbsp;<% } %>
-	</td>
       </tr>
       <% } %>
     </table>
+    <div class="submit">
+      <%= submit_button 'Create Script', name => 'genscript' %>
+    </div>
+    <% end %>
     <% } else { %>
     <p>No probes found</p>
     <% } %>

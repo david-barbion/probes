@@ -1,0 +1,310 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use POSIX;
+use File::Path;
+use Getopt::Long;
+
+my $action = "start";
+my $foreground = 0;
+my $pidfile = "/tmp/probe_runner.pid";
+
+my ($name, $description);
+my $base_dir = "/tmp";
+my ($run_dir, $output_dir, $logfile);
+
+
+my $psql = "/usr/bin/psql";
+my ($host, $port, $user, $dbname);
+
+my $help;
+my $sql;
+
+sub logger {
+    my $now = localtime;
+    map { print STDERR qq{[$now] $_\n} } @_ if scalar(@_);
+}
+
+sub check_pidfile {
+    if (-f $pidfile) {
+	unless (open(PID, $pidfile)) {
+	    logger qq{Unable to open pidfile ($pidfile): $!};
+	    return 0; # error
+	}
+	my $pid = <PID>;
+	chomp $pid;
+	close(PID);
+
+	if (kill(0, $pid)) {
+	    return $pid; # exists and signalable
+	} else {
+	    return 0; # does not exist or is not ours
+	}
+    } else {
+	return 0; # does not exist
+    }
+}
+
+sub write_pid {
+    my $pid = shift;
+
+    return 1 unless defined $pid;
+
+    unless (open(PID, ">", $pidfile)) {
+	logger qq{Unable to open pidfile ($pidfile): $!};
+	return 1;
+    }
+
+    print PID $pid;
+    close PID;
+
+    return 0;
+}
+
+sub daemonize {
+
+    # prepare output dir, needed for the logfile
+    if (! -d $output_dir) {
+	system("mkdir -p $output_dir");
+    }
+
+    # fork and go to background, detach from tty
+    my $child = fork();
+    exit 0 if $child;
+
+    exit 1 if write_pid($$);
+    close(STDIN);
+    close(STDOUT);
+    close(STDERR);
+    open STDOUT,">/dev/null";
+    open STDERR,">>$logfile";
+    POSIX::setsid();
+    chdir '/';
+}
+
+sub sigterm {
+    # block sigterm
+    local $SIG{TERM} = "IGNORE";
+
+    logger qq{Received stop request, exiting};
+
+    # remove the pidfile
+    if (-f $pidfile) {
+	unlink $pidfile or logger qq{Unable to remove pidfile: $!};
+    }
+
+    # exit
+    exit 0
+}
+
+sub sighup {
+    # block sighup
+    local $SIG{TERM} = "IGNORE";
+
+    # rotate and pack
+    my $dir = rotate();
+    pack_archive($dir);
+}
+
+sub run_loop {
+    my $psql_command = $psql;
+    $psql_command .= " -h $host" if defined $host;
+    $psql_command .= " -p $port" if defined $port;
+    $psql_command .= " -U $user" if defined $user;
+
+    my $db = $dbname ||= '';
+
+    while (1) {
+	open(PSQL, qq{| $psql_command -At -F',' -f - $db});
+	print PSQL $sql, "\n";
+	close(PSQL);
+	sleep(1);
+    }
+}
+
+sub gen_run_dir {
+    if (!defined $name) {
+	logger qq{The name of the run is mandatory};
+	exit 1;
+    }
+
+    my $now = time;
+    my $run_dir = qq{pg_probe_${now}_${name}};
+    $run_dir =~ s/\s/_/g;
+    $run_dir =~ s/\W//g;
+
+    return $run_dir;
+}
+
+sub setup_dirs {
+    $run_dir = gen_run_dir();
+    $output_dir = qq{${base_dir}/${run_dir}};
+    $logfile = "$output_dir/runner.log";
+}
+
+sub rotate {
+
+    my $old_dir = $run_dir;
+
+    setup_dirs();
+
+    logger qq{run_dir: $run_dir
+output_dir: $output_dir
+logfile: $logfile};
+
+    if (!$foreground) {
+	# reopen logfile
+	logger "Run rotated";
+	close(STDERR);
+	open STDERR,">>$logfile";
+    }
+
+    return $old_dir;
+}
+
+sub pack_archive {
+    my $dir = shift;
+
+    my ($prefix, $basename);
+    if ($dir =~ m!(.*)/([^/]+)$!) {
+	$prefix = $1;
+	$basename = $2;
+    } else {
+	$prefix = ".";
+	$basename = $dir;
+    }
+
+    # Create a tarball
+    my $tarball = qq{${basename}.tgz};
+    chdir $prefix;
+
+    print qq{
+basename: $basename
+prefix: $prefix
+tarball: $tarball
+};
+
+    if (system("tar czf $tarball $basename")) {
+	logger qq{Unable to create result archive};
+	return undef;
+    }
+
+    return $tarball;
+}
+
+sub usage {
+    print qq{usage: $0 [options] {start|stop|pack|rotate}
+options:
+  -P, --psql=BIN           path to the psql command
+  -d, --dbname=DATABASE    connection database
+  -h, --host=HOSTNAME      database server host or socket directory
+  -p, --port=PORT          database server port
+  -U, --username=USERNAME  connection user name
+
+  -o, --output=DIR         output directory
+  -n, --run-name=TITLE     run name
+  -D, --description=TEXT   run description
+
+  -F, --forground          do not detach from console
+  -p, --pid-file=FILE      path to the pid file
+
+  -?, --help               print usage
+
+};
+    exit 1
+}
+
+# Process command line options and look for an action keyword. There
+# are no mandatory options.
+GetOptions("psql|P=s" => \$psql,
+	   "dbname=s" => \$dbname,
+	   "username|U=s" => \$user,
+	   "host|h=s" => \$host,
+	   "port|p=i" => \$port,
+	   "output=s" => \$base_dir,
+	   "run-name|n=s" => \$name,
+	   "description|D=s" => \$description,
+	   "foreground|F" => \$foreground,
+	   "pid-file=s" => \$pidfile,
+	   "help|?" => \$help) or die usage();
+usage if $help;
+
+# Validate action name
+if (defined $ARGV[0]) {
+    if ($ARGV[0] ne "start" and $ARGV[0] ne "stop"
+	and $ARGV[0] ne "pack" and $ARGV[0] ne "rotate") {
+	logger qq{Unknown action};
+	usage;
+    }
+    $action = $ARGV[0];
+}
+
+if ($action eq 'start') {
+    # Prepare directories
+    $run_dir = gen_run_dir();
+    $output_dir = qq{${base_dir}/${run_dir}};
+    $logfile = "$output_dir/runner.log";
+
+    # SQL Script to run with psql
+    $sql = <<EOF;
+<%== $sql %>
+EOF
+
+    # check if another runner is already running
+    if (check_pidfile()) {
+	logger qq{Another probe is running};
+	exit 1;
+    }
+
+    setup_dirs();
+
+    # setup the signal handlers
+    $SIG{INT} = \&sigterm;
+    $SIG{TERM} = \&sigterm;
+    $SIG{HUP} = \&sighup;
+
+    # daemonize if asked
+    daemonize() unless $foreground;
+
+    # run the commands in a loop
+    run_loop();
+
+} elsif ($action eq 'stop') {
+
+    my $target_pid = check_pidfile();
+
+    if ($target_pid) {
+	kill(15, $target_pid);
+    } else {
+	logger qq{Probe is not running. Stale pidfile?};
+    }
+
+} elsif ($action eq 'pack') {
+    # Search for dirs in $base_dir matching the run_dir pattern and
+    # create a tarball for each of them
+    while (my $f = glob("$base_dir/*")) {
+	next if (-f $f);
+	if (-d $f && $f =~ m!/(pg_probe_\d+_\w+)$!) {
+	    # skip already packed dirs
+	    next if (-f "$base_dir/$1.tgz");
+
+	    print "Packing $f: ";
+	    my $tarball = pack_archive($f);
+	    (defined $tarball) ? print "done.\n" : print "failed.\n";
+	}
+    }
+
+} elsif ($action eq 'rotate') {
+    logger qq{Not implemented};
+    exit 0;
+
+    my $target_pid = check_pidfile();
+
+    if ($target_pid) {
+	kill(1, $target_pid);
+    } else {
+	logger qq{Probe is not running. Stale pidfile?};
+    }
+}

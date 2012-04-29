@@ -13,4 +13,9 @@ draw data
 - catch errors in graph query execution and display a message
 
 probes:
-- add support to create a script
+- add probes types to ease script creation:
+  * SQL for psql
+  * sysstat
+  * one shot system commands
+  * long running system commands
+
