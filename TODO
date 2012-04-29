@@ -2,6 +2,7 @@ everything:
 - check db error, at least for writes and query run on user input
 - add messages where needed
 - add breadcrumbs ? or page tree path ?
+- try http://twitter.github.com/bootstrap/
 
 draw show
 - add interaction:
@@ -13,9 +14,5 @@ draw data
 - catch errors in graph query execution and display a message
 
 probes:
-- add probes types to ease script creation:
-  * SQL for psql
-  * sysstat
-  * one shot system commands
-  * long running system commands
-
+- add probes types to ease script creation
+- implement other probe types inside probe_runner.pl

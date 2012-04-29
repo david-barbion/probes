@@ -12,15 +12,26 @@ my $foreground = 0;
 my $pidfile = "/tmp/probe_runner.pid";
 
 my ($name, $description);
+my @sysstat_dirs = ("/var/log/sa", "/var/log/sysstat");
+my $sysstat_dir;
 my $base_dir = "/tmp";
 my ($run_dir, $output_dir, $logfile);
-
+my $frequency = 60; # wait 60 seconds between runs
 
 my $psql = "/usr/bin/psql";
 my ($host, $port, $user, $dbname);
 
 my $help;
+
 my $sql;
+
+# Input from the database
+my $commands;
+my $VAR1;
+<%== $commands %>
+
+$commands = $VAR1;
+
 
 sub logger {
     my $now = localtime;
@@ -105,7 +116,22 @@ sub sighup {
 
     # rotate and pack
     my $dir = rotate();
-    pack_archive($dir);
+    pack_archive("$base_dir/$dir");
+}
+
+sub gen_sql {
+    # Prepare the SQL script
+    $sql = '';
+    foreach my $c (@{$commands}) {
+	if ($c->{type} eq 'sql') {
+	    $sql .= <<EOF
+-- $c->{probe}
+\\o | (mkdir -p \$(dirname ${output_dir}/$c->{output}) && cat >> ${output_dir}/$c->{output})
+$c->{command};
+
+EOF
+	}
+    }
 }
 
 sub run_loop {
@@ -120,41 +146,69 @@ sub run_loop {
 	open(PSQL, qq{| $psql_command -At -F',' -f - $db});
 	print PSQL $sql, "\n";
 	close(PSQL);
-	sleep(1);
+	sleep($frequency);
     }
 }
 
-sub gen_run_dir {
+sub setup_probe_run {
+
+    # Prepare the output directory
     if (!defined $name) {
 	logger qq{The name of the run is mandatory};
 	exit 1;
     }
 
     my $now = time;
-    my $run_dir = qq{pg_probe_${now}_${name}};
+    $run_dir = qq{pg_probe_${now}_${name}};
     $run_dir =~ s/\s/_/g;
     $run_dir =~ s/\W//g;
 
-    return $run_dir;
-}
+    # Ensure the output dir is absolute
+    unless ($base_dir =~ m!^/!) {
+	my $pwd = `pwd`; chomp $pwd;
+	$base_dir = qq{$pwd/$base_dir};
+    }
 
-sub setup_dirs {
-    $run_dir = gen_run_dir();
     $output_dir = qq{${base_dir}/${run_dir}};
     $logfile = "$output_dir/runner.log";
+
+    unless (-d $output_dir) {
+	system("mkdir -p $output_dir");
+    }
+
+    if (!defined $description) {
+	my $hostname = `hostname`; chomp $hostname;
+	my $start = localtime;
+	$description = qq{Probe run on $hostname starting at $start};
+    }
+
+    # Create the META file
+    if (open(META, ">$output_dir/META")) {
+	print META qq{version: "0.1"\n};
+	print META qq{name: "$name"\n};
+	print META qq{description: "$description"\n};
+	foreach my $c (@{$commands}) {
+	    print META qq{probe: $c->{id} "$c->{probe}"\n};
+	}
+	close(META);
+    } else {
+	logger qq{Could not create META file. Aborting.};
+	exit 1;
+    }
+
+    # Create the commands to run, the output files depends on what we
+    # have just prepared
+    # XXX
 }
 
 sub rotate {
 
     my $old_dir = $run_dir;
 
-    setup_dirs();
+    setup_probe_run();
+    gen_sql();
 
-    logger qq{run_dir: $run_dir
-output_dir: $output_dir
-logfile: $logfile};
-
-    if (!$foreground) {
+    unless($foreground) {
 	# reopen logfile
 	logger "Run rotated";
 	close(STDERR);
@@ -176,18 +230,22 @@ sub pack_archive {
 	$basename = $dir;
     }
 
+    # Copy sar files
+    system("mkdir -p $dir/sar");
+    foreach my $d (@sysstat_dirs) {
+	if (-d $d) {
+	    foreach my $s (<$d/sa*>) {
+		system("cp $s $dir/sar") if (-r $s);
+	    }
+	}
+    }
+
     # Create a tarball
     my $tarball = qq{${basename}.tgz};
     chdir $prefix;
 
-    print qq{
-basename: $basename
-prefix: $prefix
-tarball: $tarball
-};
-
     if (system("tar czf $tarball $basename")) {
-	logger qq{Unable to create result archive};
+	logger qq{Unable to create result archive: $dir};
 	return undef;
     }
 
@@ -195,7 +253,7 @@ tarball: $tarball
 }
 
 sub usage {
-    print qq{usage: $0 [options] {start|stop|pack|rotate}
+    print qq{usage: $0 [options] {start|stop|pack|rotate|status}
 options:
   -P, --psql=BIN           path to the psql command
   -d, --dbname=DATABASE    connection database
@@ -206,9 +264,11 @@ options:
   -o, --output=DIR         output directory
   -n, --run-name=TITLE     run name
   -D, --description=TEXT   run description
+  -s, --sysstat=DIR        sysstat results directory
 
-  -F, --forground          do not detach from console
-  -p, --pid-file=FILE      path to the pid file
+  -i, --interval=NUM       time to wait between runs
+  -F, --foreground         do not detach from console
+  -f, --pid-file=FILE      path to the pid file
 
   -?, --help               print usage
 
@@ -222,43 +282,41 @@ GetOptions("psql|P=s" => \$psql,
 	   "dbname=s" => \$dbname,
 	   "username|U=s" => \$user,
 	   "host|h=s" => \$host,
-	   "port|p=i" => \$port,
+	   "port=i" => \$port,
 	   "output=s" => \$base_dir,
 	   "run-name|n=s" => \$name,
 	   "description|D=s" => \$description,
 	   "foreground|F" => \$foreground,
-	   "pid-file=s" => \$pidfile,
+	   "pid-file|f=s" => \$pidfile,
+	   "sysstat=s" => \$sysstat_dir,
+	   "interval=i" => \$frequency,
 	   "help|?" => \$help) or die usage();
 usage if $help;
 
 # Validate action name
 if (defined $ARGV[0]) {
     if ($ARGV[0] ne "start" and $ARGV[0] ne "stop"
-	and $ARGV[0] ne "pack" and $ARGV[0] ne "rotate") {
+	and $ARGV[0] ne "pack" and $ARGV[0] ne "rotate"
+	and $ARGV[0] ne "status") {
 	logger qq{Unknown action};
 	usage;
     }
     $action = $ARGV[0];
 }
 
+# Include given sysstat directory to the default list
+push @sysstat_dirs, $sysstat_dir if defined $sysstat_dir;
+
+# Do the work asked. start is the default.
 if ($action eq 'start') {
-    # Prepare directories
-    $run_dir = gen_run_dir();
-    $output_dir = qq{${base_dir}/${run_dir}};
-    $logfile = "$output_dir/runner.log";
-
-    # SQL Script to run with psql
-    $sql = <<EOF;
-<%== $sql %>
-EOF
-
     # check if another runner is already running
     if (check_pidfile()) {
 	logger qq{Another probe is running};
 	exit 1;
     }
 
-    setup_dirs();
+    setup_probe_run();
+    gen_sql();
 
     # setup the signal handlers
     $SIG{INT} = \&sigterm;
@@ -297,8 +355,6 @@ EOF
     }
 
 } elsif ($action eq 'rotate') {
-    logger qq{Not implemented};
-    exit 0;
 
     my $target_pid = check_pidfile();
 
@@ -306,5 +362,13 @@ EOF
 	kill(1, $target_pid);
     } else {
 	logger qq{Probe is not running. Stale pidfile?};
+    }
+} elsif ($action eq 'status') {
+    my $target_pid = check_pidfile();
+
+    if ($target_pid) {
+	print qq{Probe is running: $target_pid\n};
+    } else {
+	print qq{Probe is not running. Check pid file and ps\n};
     }
 }

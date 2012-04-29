@@ -22,8 +22,8 @@
 	<%= text_field probe_name => $p{name}, size => 72, id => 'name' %>
       </li>
       <li>
-	<label for="type">Probe type (e.g. SQL or System):</label>
-	<%= text_field probe_type => $p{type}, size => 72, id => 'type' %>
+	<label for="type">Probe type:</label>
+	<%= select_field probe_type => $types %>
       </li>
       <li>
 	<label for="desc">Description:</label>

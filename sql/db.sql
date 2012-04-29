@@ -4,6 +4,7 @@ drop table if exists custom_graphs;
 drop table if exists default_graphs;
 drop table if exists probes_in_sets;
 drop table if exists graphs;
+drop table if exists probe_types;
 drop table if exists probes;
 drop table if exists probe_sets;
 
@@ -17,13 +18,27 @@ create table probe_sets (
        upload_time timestamptz not null
 );
 
+create table probe_types (
+       id serial primary key,
+       probe_type text unique not null,
+       description text not null,
+       runner_key text unique not null -- internal name for run implementation inside probe_runner.pl
+);
+
+insert into probe_types (id, probe_type, description, runner_key) values (1, 'SQL', 'Run a SQL query with psql', 'sql');
+insert into probe_types (id, probe_type, description, runner_key) values (2, 'sysstat', 'Get the system statistics gathered by sysstat', 'sar');
+insert into probe_types (id, probe_type, description, runner_key) values (3, 'Command', 'Run a system command', 'command');
+insert into probe_types (id, probe_type, description, runner_key) values (4, 'Fork Command', 'Run a non returning system command within another process', 'fork');
+
+select pg_catalog.setval('probe_types_id_seq', 4, true);
+
 -- Probes are the resulting tables from the probe set, the tables
 -- columns depends on the version of PostgreSQL where the data comes
 -- from. this tables allow to generate the probing script to run.
 create table probes (
        id serial primary key,
        probe_name text not null,
-       probe_type text not null,
+       probe_type integer not null references probe_types(id),
        description text,
        version text not null,
        command text, -- command/query to get the data from PostgreSQL, eg null for sysstat
@@ -91,7 +106,7 @@ $$;
 
 
 -- default probes
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('cluster_hitratio', 'SQL', 'Cache hit/miss ratio on the cluster', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, round(sum(
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('cluster_hitratio', 1, 'Cache hit/miss ratio on the cluster', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, round(sum(
   CASE 
     WHEN (blks_read::numeric*blks_hit::numeric)=0 then null
     ELSE 100-round((blks_read::numeric*100/(blks_read::numeric+blks_hit::numeric)),2)
@@ -103,7 +118,7 @@ WHERE datname not in (''template0'',''template1'',''postgres'');', NULL, 'CREATE
   cache_hit_ratio float
 );', 'sql/cluster_hitratio.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('databases_hitratio', 'SQL', 'Cache hit/miss ratio on databases', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('databases_hitratio', 1, 'Cache hit/miss ratio on databases', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
   datname as database, round(
   CASE 
     WHEN (blks_read::numeric*blks_hit::numeric)=0 then null
@@ -117,7 +132,7 @@ WHERE datname not in (''template0'',''template1'',''postgres'');', NULL, 'CREATE
   cache_hit_ratio float
 );', 'sql/databases_hitratio.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('tables_hitratio', 'SQL', 'Cache hit/miss ratio on tables, indexes and total', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('tables_hitratio', 1, 'Cache hit/miss ratio on tables, indexes and total', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
        schemaname as schema,
        relname as table,
        case when
@@ -157,7 +172,7 @@ FROM pg_statio_user_tables;', NULL, 'CREATE TABLE tables_hitratio (
   ratio float
 );', 'sql/tables_hitratio.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('connections', 'SQL', 'Connections', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('connections', 1, 'Connections', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
   COUNT(*) AS total, 
   coalesce(SUM((current_query NOT IN (''<IDLE>'',''<IDLE> in transaction''))::integer), 0) AS active, 
   coalesce(SUM(waiting::integer), 0) AS waiting,
@@ -170,7 +185,7 @@ FROM pg_stat_activity WHERE procpid <> pg_backend_pid();', NULL, 'CREATE TABLE c
   idle_in_xact int
 );', 'sql/connections.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('read_write_ratio', 'SQL', 'Read / Write ratio on tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('read_write_ratio', 1, 'Read / Write ratio on tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime,
   relname as table,
   seq_tup_read,
   idx_tup_fetch,
@@ -190,7 +205,7 @@ WHERE n_tup_ins + n_tup_upd + n_tup_del > 0;', NULL, 'CREATE TABLE read_write_ra
   ratio float
 );', 'sql/read_write_ratio.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('database_stats', 'SQL', 'Database statistics', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_stat_database;', NULL, 'CREATE TABLE database_stats (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('database_stats', 1, 'Database statistics', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_stat_database;', NULL, 'CREATE TABLE database_stats (
   datetime timestamptz,
   datid bigint,
   datname text,
@@ -208,7 +223,7 @@ insert into probes (probe_name, probe_type, description, version, command, prelo
   stats_reset timestamptz
 );', 'sql/database_stats.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('bgwriter_stats', 'SQL', 'Background writer statistics', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_bgwriter;', NULL, 'CREATE TABLE bgwriter_stats (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('bgwriter_stats', 1, 'Background writer statistics', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_bgwriter;', NULL, 'CREATE TABLE bgwriter_stats (
   datetime timestamptz,
   checkpoints_timed bigint,
   checkpoints_req bigint,
@@ -221,7 +236,7 @@ insert into probes (probe_name, probe_type, description, version, command, prelo
   stats_reset timestamptz
 )', 'sql/bgwriter_stats.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('user_tables', 'SQL', 'Statistics of user tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_user_tables;', NULL, 'CREATE TABLE user_tables (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('user_tables', 1, 'Statistics of user tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_user_tables;', NULL, 'CREATE TABLE user_tables (
   datetime timestamptz,
   relid bigint,
   schemaname text,
@@ -246,7 +261,7 @@ insert into probes (probe_name, probe_type, description, version, command, prelo
   autoanalyze_count bigint
 );', 'sql/user_tables.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('user_indexes', 'SQL', 'Statistics of user indexes', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_user_indexes;', NULL, 'CREATE TABLE user_indexes (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('user_indexes', 1, 'Statistics of user indexes', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * FROM pg_stat_user_indexes;', NULL, 'CREATE TABLE user_indexes (
   datetime timestamptz,
   relid bigint,
   indexrelid bigint,
@@ -258,7 +273,7 @@ insert into probes (probe_name, probe_type, description, version, command, prelo
   idx_tup_fetch bigint
 );', 'sql/user_indexes.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('io_user_tables', 'SQL', 'I/O Statistics on all tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_statio_all_tables;', NULL, 'CREATE TABLE io_user_tables (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('io_user_tables', 1, 'I/O Statistics on all tables', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_statio_all_tables;', NULL, 'CREATE TABLE io_user_tables (
   datetime timestamptz,
   relid bigint,
   schemaname text,
@@ -273,7 +288,7 @@ insert into probes (probe_name, probe_type, description, version, command, prelo
   tidx_blks_hit bigint
 );', 'sql/io_user_tables.csv', true);
 
-insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('io_user_indexes', 'SQL', 'I/O Statistics on all indexes', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_statio_all_indexes;', NULL, 'CREATE TABLE io_user_indexes (
+insert into probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled) values ('io_user_indexes', 1, 'I/O Statistics on all indexes', '9.0', 'SELECT date_trunc(''seconds'', current_timestamp) as datetime, * from pg_statio_all_indexes;', NULL, 'CREATE TABLE io_user_indexes (
   datetime timestamptz,
   relid bigint,
   indexrelid bigint,

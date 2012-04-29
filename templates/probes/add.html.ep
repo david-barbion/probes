@@ -20,8 +20,8 @@
 	<%= text_field 'probe_name', size => 72, id => 'name' %>
       </li>
       <li>
-	<label for="type">Probe type (e.g. SQL or System):</label>
-	<%= text_field 'probe_type', size => 72, id => 'type' %>
+	<label for="type">Probe type:</label>
+	<%= select_field probe_type => $types %>
       </li>
       <li>
 	<label for="desc">Description:</label>
@@ -49,7 +49,7 @@
       </li>
       <li>
 	<label for="enable">Enable: </label>
-	<%= check_box 'enable', id => 'enable' %>
+	<%= check_box 'enable' => 'on', id => 'enable' %>
       </li>
     </ol>
   </fieldset>
