@@ -1,15 +1,26 @@
 {
-	"title" : "PostgreSQL Probes",
+    "title" : "PostgreSQL Probes",
 
-	"secret" : "|Erp--Wjgb)+eiB/|H=|V7!#+M|L{a8=J2|pd+N1=M|&pJWq|M&,f3q^XS",
+    "rewrite": 0,
+    "base_url" : "http://www.example.com/pg_probes/",
 
-	"database" : {
-		"dsn"	  : "dbi:Pg:database=probe;host=127.0.0.1;port=5432",
-		"username" : "probe",
-		"password" : "",
-		"options"  : {
-			"AutoCommit" : 0,
-			"pg_enable_utf8" : 1
-		}
+    "secret" : "|Erp--Wjgb)+eiB/|H=|V7!#+M|L{a8=J2|pd+N1=M|&pJWq|M&,f3q^XS",
+
+    "database" : {
+	"dsn"	  : "dbi:Pg:database=probe;host=127.0.0.1;port=5432",
+	"username" : "probe",
+	"password" : "",
+	"options"  : {
+	    "AutoCommit" : 0,
+	    "pg_enable_utf8" : 1
 	}
+    }
+
+    "collector" : {
+	"watchdir": "/tmp/pg_probe/incoming",
+	"logfile": "/tmp/pg_probe/collect.log",
+        "sysstat_home": "/usr/local/sysstat",
+	"syslog" : 0,
+	"naptime": 10
+    }
 }

@@ -8,6 +8,7 @@ use Getopt::Long;
 use Mojo::JSON;
 use Sys::Syslog qw( :DEFAULT setlogsock);
 use DBI;
+use IO::Handle;
 
 use Data::Dumper;
 
@@ -15,18 +16,20 @@ use Data::Dumper;
 my $logfile = "collector.log";
 my $syslog = 0;
 my $watchdir;
+my $interval = 30;
 
 # Globals
+my $foreground = 0;
 my $dbh;
 my $config_file;
 my $help;
 my $config = { };
+my $running = 1;
 
 sub logger {
     # Log to syslog or stderr (which can be redirected to a log file
     if ($syslog) {
-	setlogsock('unix');
-	openlog('yang','','user');
+	openlog('probe_collector','','user');
 	map { syslog('info', $_) } @_ if scalar(@_);
 	closelog();
     } else {
@@ -40,11 +43,12 @@ sub daemonize {
     my $child = fork();
     exit 0 if $child;
 
-    close(STDIN);
     close(STDOUT);
     close(STDERR);
     open STDOUT,">/dev/null";
     open STDERR,">>$logfile";
+    autoflush STDERR 1;
+    close(STDIN);
     POSIX::setsid();
     chdir '/';
 }
@@ -54,8 +58,16 @@ sub sighup {
     local $SIG{HUP} = "IGNORE";
 
     # reopen logfile
-    close STDERR;
-    open STDERR,">>$logfile";
+    if (! $syslog) {
+	logger `pwd`;
+	logger qq{Reopening logfile: $logfile};
+
+#	close STDERR;
+#	open STDERR,">>$logfile";
+    }
+
+    # Reload the configuration
+    $config = load_config($config_file);
 }
 
 sub sigterm {
@@ -64,11 +76,8 @@ sub sigterm {
     # block the incoming signal
     local $SIG{$signame} = "IGNORE";
 
-    if (defined $dbh) {
-	$dbh->rollback;
-	$dbh->disconnect;
-    }
-    exit 0;
+    logger qq{Exiting};
+    $running = 0;
 }
 
 sub database {
@@ -102,15 +111,18 @@ sub load_config {
     $logfile = $conf->{collector}->{logfile};
     $syslog = $conf->{collector}->{syslog};
     $watchdir = $conf->{collector}->{watchdir};
+    $interval = $conf->{colletor}->{naptime} ||= 30;
 
     return $conf;
 }
 
 sub main_loop {
 
+    logger qq{Now watching: $watchdir};
+
     my %watchlist = ();
     # Watch the directory in an infinite loop
-    while (1) {
+    while ($running) {
 	my @todo = ();
 	if (-d $watchdir) {
 	    while (my $f = <$watchdir/*.tgz>) {
@@ -133,7 +145,7 @@ sub main_loop {
 	    # Load that into the db
 	    load_archives(@todo) if scalar @todo;
 	}
-	sleep(5);
+	sleep($interval);
     }
 }
 
@@ -371,14 +383,15 @@ WHERE p.id = ?});
 		$ENV{LC_ALL} = 'C';
 
 		# Run the command for each input file
-		my $output = sprintf("%s/%d.csv", $basename, $p->{id});
+		my $output = sprintf("%s/%d.csv", "$workdir/$basename", $p->{id});
 		if ($sp =~ m!/$!) {
-		    while (my $f = <$basename/$sp*>) {
+		    while (my $f = <$workdir/$basename/$sp*>) {
 			next if (! -f $f || ($p->{type} eq 'sar' && $f !~ m!/sa\d+$!));
 			my $cmd = $p->{preload};
 			$cmd =~ s!\%f!$f!;
 
-			if (system($cmd . " >> " . $output)) {
+			my $rc = system($cmd . " >> " . $output);
+			if ($rc) {
 			    logger qq{Could not run preload command on $f for $p->{id}};
 			    $ENV{PATH} = $path;
 			    next;
@@ -388,7 +401,8 @@ WHERE p.id = ?});
 		    my $cmd = $p->{preload};
 		    $cmd =~ s!\%f!$sp!;
 
-		    if (system($cmd . " >> " . $output)) {
+		    my $rc = system($cmd . " >> " . $output);
+		    if ($rc) {
 			logger qq{Could not run preload command on $sp for $p->{id}};
 			$ENV{PATH} = $path;
 			next;
@@ -399,12 +413,12 @@ WHERE p.id = ?});
 		push @csv, $output;
 	    } else {
 		if ($sp =~ m!/$!) {
-		    while (my $f = <$basename/$sp*>) {
+		    while (my $f = <$workdir/$basename/$sp*>) {
 			next if (! -f $f);
 			push @csv, $f;
 		    }
 		} else {
-		    push @csv, "$basename/$sp";
+		    push @csv, "$workdir/$basename/$sp";
 		}
 
 	    }
@@ -446,6 +460,7 @@ sub usage {
 options:
   -c, --config=FILE        path to the configuration file
   -l, --logfile=FILE       path to the logfile
+  -F, --foreground         do not detach from console
   -h, --help               print usage
 
 };
@@ -454,6 +469,7 @@ options:
 
 GetOptions("config=s" => \$config_file,
 	   "logfile=s" => \$logfile,
+	   "foreground|F" => \$foreground,
 	   "help" => \$help) or die usage();
 usage if ($help);
 
@@ -462,9 +478,19 @@ unless (defined $config_file) {
     usage;
 }
 
+# Load the configuration file
+my $cwd = `pwd`; chomp $cwd;
+$config_file = "$cwd/$config_file";
 $config = load_config($config_file);
 
+# Setup the signal handlers
 $SIG{HUP} = \&sighup;
 $SIG{INT} = $SIG{TERM} = \&sigterm;
 
+# Fork to background if ask
+daemonize() unless $foreground;
+
+logger qq{probe_collector started, entering watch loop};
+
+# Watch the directory and load archives into the database
 main_loop();

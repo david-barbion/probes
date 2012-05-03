@@ -332,15 +332,15 @@ sub script {
 	    my $sth = $dbh->prepare(qq{SELECT p.probe_name, t.runner_key, p.command, p.source_path
 FROM probes p JOIN probe_types t ON (p.probe_type = t.id)
 WHERE p.enabled = true AND p.id = ?});
-	    my $commands = [ ];
+	    my $commands = { };
 	    foreach my $id (keys %ids) {
 		$sth->execute($id);
 		my ($n, $t, $c, $p) = $sth->fetchrow();
-		push @{$commands}, { id => $id,
-				     probe => $n,
-				     type => $t,
-				     command => $c,
-				     output => $p } if defined $n;
+		$commands->{$t} = [ ] unless exists $commands->{$t};
+		push @{$commands->{$t}}, { id => $id,
+					   probe => $n,
+					   command => $c,
+					   output => $p } if defined $n;
 	    }
 	    $sth->finish;
 	    $dbh->commit;
@@ -359,7 +359,10 @@ WHERE p.enabled = true AND p.id = ?});
 
     my $dbh = $self->database;
     # get the list of enabled probes
-    my $sth = $dbh->prepare(qq{SELECT id, probe_name, probe_type, description, version FROM probes WHERE enabled = true ORDER BY 2, 3});
+    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, t.probe_type, p.description, p.version
+FROM probes p
+JOIN probe_types t ON (p.probe_type = t.id)
+WHERE enabled = true ORDER BY 2, 3});
     $sth->execute;
     my $probes = [ ];
     while (my ($i, $n, $t, $d, $v) = $sth->fetchrow()) {
@@ -377,8 +380,6 @@ WHERE p.enabled = true AND p.id = ?});
     $self->stash(probes => $probes);
 
     $self->render;
-    # create a form to select the probes
-    # generate the portion of the script
 }
 
 1;

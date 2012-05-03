@@ -38,6 +38,7 @@
       <li>
 	<label for="preload">Preload command, to transform the data into CSV:</label>
 	<%= text_area preload => (rows => 5, cols => 70, id => 'preload') => begin %><% end %>
+	<p>The placeholder %f can be used to specify the input file name in the command</p>
       </li>
       <li>
 	<label for="ddl">Target table:</label>
@@ -46,6 +47,7 @@
       <li>
 	<label for="path">Path in archive:</label>
 	<%= text_field 'source_path', size => 72, id => 'path' %>
+	<p>Use a trailing slash to have the collector load all the files in that directory</p>
       </li>
       <li>
 	<label for="enable">Enable: </label>

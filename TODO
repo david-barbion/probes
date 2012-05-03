@@ -14,5 +14,9 @@ draw data
 - catch errors in graph query execution and display a message
 
 probes:
-- add probes types to ease script creation
 - implement other probe types inside probe_runner.pl
+
+Before publish:
+- export to image
+- upload
+- multiple queries

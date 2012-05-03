@@ -17,7 +17,7 @@ sub startup {
     my $config = $self->plugin( 'JSONConfig' => { file => $config_file });
 
     # setup secret passphrase XXX
-    $self->secret( $config->{ secret } || 'Xwyfe-_d:yGDr+p][Vs7Kk+e3mmP=c_|s7hvExF=b|4r4^gO|' );
+    $self->secret( $config->{secret} || 'Xwyfe-_d:yGDr+p][Vs7Kk+e3mmP=c_|s7hvExF=b|4r4^gO|' );
 
     # startup database connection
     $self->plugin( 'database', $config->{ database } || {} );
@@ -30,6 +30,14 @@ sub startup {
 
     # Add a perl mime type for the script generation
     $self->types->type(pl => 'application/x-perl');
+
+    # CGI pretty URLs
+    if ($config->{rewrite}) {
+	$self->hook( before_dispatch => sub {
+			 my $self = shift;
+			 $self->req->url->base(Mojo::URL->new($config->{base_url}));
+		     });
+    }
 
     # Routes
     my $r = $self->routes;
