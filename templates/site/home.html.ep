@@ -1,23 +1,38 @@
 % layout 'default';
-<h2>Available probes</h2>
+% my @sets = @{stash 'sets'};
+<div class="block">
+  <h2>Available probe results</h2>
 
-<div id="probes">
-  <% if (scalar(@{$probes})) { %>
-  <ul>
-    <% for my $p (@{$probes}) { %>
-    <li><a href="<%== url_for 'draw_list', nsp => $p->{schema} %>" title="<%= $p->{schema} %>"><%= $p->{probe} %></a> <%= $p->{desc} %></li>
+  <div id="sets" class="block_body">
+    <% if (scalar(@sets)) { %>
+    <table class="block_table">
+      <tr>
+	<th>Name</th>
+	<th>Description</th>
+	<th>&nbsp;</th>
+      </tr>
+      <% foreach my $p (@sets) { %>
+      <%     my %line = %{$p}; %>
+      <tr>
+	<td><%= link_to draw_list => { nsp => $line{schema} } => begin %><%= $line{set} %><% end %></td>
+	<td><%= $line{desc} %></td>
+	<td><%= link_to remove => { id => $line{id} } => begin %>Delete<% end %></td>
+      </tr>
+      <% } %>
+    </table>
+    <% } else { %>
+    <p>No results found</p>
     <% } %>
-  </ul>
-  <% } else { %>
-  <p>No probes found</p>
-  <% } %>
+  </div>
 </div>
 
-<h2>Upload a probe archive</h2>
+<div class="block">
+  <h2>Upload an archive</h2>
 
-<div id="upload">
-  <%= form_for upload => (enctype => 'multipart/form-data', method => 'POST') => begin %>
-    <%= file_field 'example' %>
+  <div id="upload" class="block_body">
+    <%= form_for upload => (enctype => 'multipart/form-data', method => 'POST') => begin %>
+    <%= file_field 'tarball' %>
     <%= submit_button 'Upload' %>
-  <% end %>
+    <% end %>
+  </div>
 </div>

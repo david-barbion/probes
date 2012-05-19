@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use POSIX;
-use Getopt::Long;
+use Getopt::Long qw{ :config bundling no_ignore_case_always no_auto_abbrev};
 
 my $action;
 my $foreground = 0;
@@ -304,17 +304,17 @@ options:
 # Process command line options and look for an action keyword. There
 # are no mandatory options.
 GetOptions("psql|P=s" => \$psql,
-	   "dbname=s" => \$dbname,
+	   "dbname|d=s" => \$dbname,
 	   "username|U=s" => \$user,
 	   "host|h=s" => \$host,
-	   "port=i" => \$port,
-	   "output=s" => \$base_dir,
+	   "port|p=i" => \$port,
+	   "output|o=s" => \$base_dir,
 	   "run-name|n=s" => \$name,
 	   "description|D=s" => \$description,
 	   "foreground|F" => \$foreground,
 	   "pid-file|f=s" => \$pidfile,
-	   "sysstat=s" => \$sysstat_dir,
-	   "interval=i" => \$frequency,
+	   "sysstat|s=s" => \$sysstat_dir,
+	   "interval|i=i" => \$frequency,
 	   "help|?" => \$help) or die usage();
 usage if $help;
 

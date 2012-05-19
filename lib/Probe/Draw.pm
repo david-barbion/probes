@@ -17,8 +17,11 @@ sub data {
 
     # Get the results of the graph query
     my $sth = $dbh->prepare($q);
-    $sth->execute();
-
+    unless ($sth->execute()) {
+    	$dbh->rollback;
+    	$dbh->disconnect;
+    	$self->render_json({ error => "query execution failed" });
+    }
 
     # Flot output
     # [ {
@@ -385,7 +388,7 @@ VALUES ((SELECT id FROM probe_sets WHERE nsp_name = ?), ?)});
     }
     $sth->finish;
 
-    # The list of probes is need for the select choice
+    # The list of probes is needed for the select choice
     $sth = $dbh->prepare("SELECT id, probe_name, version FROM probes");
     $sth->execute();
     my $probes = [ '' ];

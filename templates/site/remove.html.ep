@@ -1,0 +1,50 @@
+% layout 'default';
+% my %set = %{stash 'set'};
+% my @graphs = @{stash 'graphs'};
+<div class="block">
+  <h2>Do you want really want to remove this result set?</h2>
+  <div id="sets" class="block_body">
+    <ul>
+      <li><%= $set{name} %></li>
+      <li><%= $set{desc} %></li>
+    </ul>
+  </div>
+</div>
+
+<div class="block">
+  <%= form_for remove => (method => 'POST', class => 'cmxform') => begin %>
+% if (scalar(@graphs)) {
+  <p>The following custom graphs will be removed unless linked to a probe:</p>
+%     foreach my $g (@graphs) {
+%         my %graph = %{$g};
+  <div class="block_body">
+    <h3><%= $graph{name} %></h3>
+    <p><%= $graph{desc} %></p>
+    <p><pre><%= $graph{query} %></pre></p>
+  </div>
+
+  <fieldset>
+    <legend>Choose an action for "<%= $graph{name} %>"</legend>
+    <ol>
+      <li>
+	<fieldset>
+	  <label>
+	    <%= radio_button qq{action$graph{id}} => 'remove', id => qq{del$graph{id}}, checked => 'checked' %>
+	    Remove this custom graph</label>
+	  <label><%= radio_button qq{action$graph{id}} => 'link', id => qq{link$graph{id}} %>
+	    Keep the custom graph for probe:</label>
+	  <label class="radioselect"><%= select_field qq{probe$graph{id}} => $probes %></label>
+	</fieldset>
+      </li>
+    </ol>
+  </fieldset>
+%     }
+% }
+
+  <div class="submit">
+    <%= submit_button 'Confirm', name => 'save' %>
+    <%= submit_button 'Cancel', name => 'cancel' %>
+  </div>
+
+  <% end %>
+</div>

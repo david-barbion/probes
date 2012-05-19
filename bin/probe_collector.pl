@@ -365,7 +365,7 @@ WHERE p.id = ?});
 	    # Prepare the CSV file
 	    my @csv = ();
 	    my $sp = $p->{path};
-	    if (defined $p->{preload}) {
+	    if (defined $p->{preload} and $p->{preload}) {
 		my $path = $ENV{PATH};
 
 		if ($p->{type} eq 'sar') {
