@@ -1,5 +1,6 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
+
 <div class="block">
   <h2><%= $set %></h2>
 
@@ -22,36 +23,35 @@
     <h3><%= check_box selection => $graph{id}, checked => 'checked' %>
       <%= $graph{name} %></h3>
     <ul class="submenu">
+      <li><a id="save<%= $graph{id} %>" class="link" href="#">Save</a></li>
       <li><%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Edit<% end %></li>
       <li><%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Remove<% end %></li>
     </ul>
   </div>
 
   <div class="block_body">
-    <p><%= $graph{desc} %></p>
 
-    <p id="log<%= $graph{id} %>"></p>
+    <div id="gbox<%= $graph{id} %>"class="graph_container">
 
-    <div class="graph">
-      <div id="graph<%= $graph{id} %>" style="width:700px;height:300px;"></div>
-      <div id="legend<%= $graph{id} %>"></div>
+      <input type="hidden" name="id" value="<%= $graph{id} %>" />
+      <input type="hidden" name="nsp" value="<%= $nsp %>" />
+
+      <div class="graph"></div>
+      <div class="legend"></div>
+
+      <div class="debug"></div>
     </div>
 
     <script type="text/javascript">
-      var options<%= $graph{id} %> = {
-      legend: { show: true, container: $('#legend<%= $graph{id} %>') },
-      xaxis: { mode: 'time', /* timeformat: "%d/%m/%y %H:%M:%S" */ },
-      selection: { mode: "x", color: "#444" }
-      };
-
-      var gopts<%= $graph{id} %> = <%== $graph{options}%>;
-
-      /* merge object2 into object1, recursively */
-      $.extend(true, options<%= $graph{id} %>, gopts<%= $graph{id} %>);
-
-      $(document).ready(function(){
-      $.plot($('#graph<%= $graph{id} %>'),<%== $graph{data} %>, options<%= $graph{id} %>);
-      });                
+      $(document).ready(function () {
+          $("#gbox<%= $graph{id} %>").probe({
+              namespace: "<%= $nsp %>",
+              id: <%= $graph{id} %>,
+              options: <%== $graph{options}%>,
+              title: "<%= $graph{name} %>",
+              desc: "<%= $graph{desc} %>",
+          });
+      });
     </script>
   </div>
 </div>
@@ -73,11 +73,3 @@
   <p class="block_body">No graphs found</p>
 </div>
 % }
-
-<%#
-TODO:
- - selection: -> ajax!
-   - range
-   - series
- - hide select_field when empty
-%>

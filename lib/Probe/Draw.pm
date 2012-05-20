@@ -9,18 +9,33 @@ sub data {
 
     my $nsp = $self->param('nsp');
     my $q = $self->param('query');
+    my $id_graph = $self->param('id_graph');
 
     my $dbh = $self->database;
 
     # Set the search to the schema contening the data tables
     $dbh->do("SET search_path TO public,${nsp}");
 
+    # When we get an id on input, retrive the query
+    if (defined $id_graph) {
+	my $sth = $dbh->prepare(qq{SELECT query FROM graphs WHERE id = ?});
+	$sth->execute($id_graph);
+	($q) = $sth->fetchrow();
+	$sth->finish;
+    }
+
+    if (!defined $q) {
+	$dbh->rollback;
+    	$dbh->disconnect;
+    	return $self->render_json({ error => "query is not defined" });
+    }
+
     # Get the results of the graph query
     my $sth = $dbh->prepare($q);
     unless ($sth->execute()) {
     	$dbh->rollback;
     	$dbh->disconnect;
-    	$self->render_json({ error => "query execution failed" });
+    	return $self->render_json({ error => "query execution failed" });
     }
 
     # Flot output
@@ -32,10 +47,23 @@ sub data {
     # ]
 
     my $points = { };
+    my ($xmin, $xmax, $ymin, $ymax);
     # Group points together to form the serie
     while (my $hrow = $sth->fetchrow_hashref()) {
 	foreach my $col (keys %{$hrow}) {
-	    next if $col eq 'start_ts';
+	    # Flotr2 has issues with the autoscale feature, so we
+	    # compute the min and max values of the two axis and
+	    # hardcode them in the graph options
+	    if ($col eq 'start_ts') {
+		$xmin = $hrow->{$col} if !defined $xmin or $xmin > $hrow->{$col};
+		$xmax = $hrow->{$col} if !defined $xmax or $xmax < $hrow->{$col};
+		next;
+	    } else  {
+		$ymin = $hrow->{$col} if !defined $ymin or $ymin > $hrow->{$col};
+		$ymax = $hrow->{$col} if !defined $ymax or $ymax < $hrow->{$col};
+	    }
+
+	    # The x axis must be named start_ts in the query
 	    if (!exists($points->{$col})) {
 		$points->{$col} = [ ];
 	    }
@@ -43,17 +71,28 @@ sub data {
 	}
     }
 
+    # Add a 1% margin on top of the graph
+    $ymax += $ymax * 0.01;
+
     # Group the series data in a list of hashes: this what flot wants
     my $data = [ ];
     foreach my $s (keys %{$points}) {
 	push @{$data}, { label => $s, data => $points->{$s} };
     }
 
+    # Add the scale values
+    my $series = { data => $data,
+		   scale => { xmin => $xmin,
+			      xmax => $xmax,
+			      ymin => $ymin,
+			      ymax => $ymax }
+		 };
+
     $sth->finish;
     $dbh->commit;
     $dbh->disconnect;
 
-    $self->render_json($data);
+    $self->render_json($series);
 }
 
 sub list {
@@ -540,55 +579,30 @@ WHERE ps.nsp_name = ?});
     $def->finish;
 
     # Get the list of saved graphs
-    my $sth = $dbh->prepare(qq{SELECT g.id, g.graph_name, g.description, g.query
+    my $sth = $dbh->prepare(qq{SELECT g.id, g.graph_name, g.description
 FROM graphs g
 JOIN custom_graphs cg ON (cg.id_graph = g.id)
 JOIN probe_sets ps ON (ps.id = cg.id_set)
 WHERE ps.nsp_name = ? ORDER BY 2});
     $sth->execute($nsp);
 
-    # prepare to get the data from each graph query
+    # prepare to get the options of each graph
     my $dbh_data = $self->database;
     $dbh_data->do("SET search_path TO public,${nsp}");
     my $json = Mojo::JSON->new;
 
     my $graphs = [ ];
     while (my @row = $sth->fetchrow()) {
-	# get the data from the graph query
-	my $sth_data = $dbh_data->prepare($row[3]);
-	$sth_data->execute();
-
-	my $points = { };
-	# Group points together to form the serie
-	while (my $hrow = $sth_data->fetchrow_hashref()) {
-	    foreach my $col (keys %{$hrow}) {
-		next if $col eq 'start_ts';
-		if (!exists($points->{$col})) {
-		    $points->{$col} = [ ];
-		}
-		push @{$points->{$col}}, [ $hrow->{'start_ts'}, $hrow->{$col} ];
-	    }
-	}
-
-	$sth_data->finish;
-
-	# Group the series data in a list of hashes: this what flot wants
-	my $data = [ ];
-	foreach my $s (keys %{$points}) {
-	    push @{$data}, { label => $s, data => $points->{$s} };
-	}
-
-	my $json_data = $json->encode($data);
-
-	# XXX Find the options of the graph
+	# Find the options of the graph
 	# default options
 	my %options = ();
-	$sth_data = $dbh_data->prepare(qq{SELECT option_name, default_value FROM flot_options});
+	my $sth_data = $dbh_data->prepare(qq{SELECT option_name, default_value FROM flot_options});
 	$sth_data->execute();
 	while (my ($k, $v) = $sth_data->fetchrow()) {
 	    $options{$k} = $v;
 	}
 	$sth_data->finish;
+
 	# graph options, override default options
 	$sth_data = $dbh_data->prepare(qq{SELECT fo.option_name, go.option_value
 FROM flot_options fo
@@ -603,18 +617,18 @@ FROM flot_options fo
 	# transform this to flot options, here is the mapping
 	#  option_name  | default_value 
 	# --------------+---------------
-	#  stacked      | off     -> series
-	#  legend-cols  | 1       -> legend
-	#  series-width | 0.5     -> series[graph-type]
-	#  show-legend  | off     -> legend
-	#  graph-type   | points  -> series
-	#  filled       | off     -> series[graph-type]
+	#  stacked      | off     -> grath-type[stacked]
+	#  legend-cols  | 1       -> legend[noColumns]
+	#  series-width | 0.5     -> graph-type[lineWidth]
+	#  show-legend  | off     -> legend[container]
+	#  graph-type   | points  -> graph-type
+	#  filled       | off     -> graph-type[fill]
 
 	my $fo = { };
 	while (my ($k, $v) = each %options) {
 	    if ($k eq 'stacked' && $v eq 'on') {
-		$fo->{series} = { } unless exists $fo->{series};
-		$fo->{series}->{staked} = Mojo::JSON->true;
+		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
+		$fo->{_type_opts}->{staked} = Mojo::JSON->true;
 	    }
 	    elsif ($k eq 'legend-cols') {
 		$fo->{legend} = { } unless exists $fo->{legend};
@@ -622,7 +636,7 @@ FROM flot_options fo
 	    }
 	    elsif ($k eq 'series-width') {
 		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
-		$fo->{_type_opts}->{width} = $v;
+		$fo->{_type_opts}->{lineWidth} = $v;
 	    }
 	    elsif ($k eq 'show-legend' && $v eq 'on') {
 		$fo->{legend} = { } unless exists $fo->{legend};
@@ -633,42 +647,20 @@ FROM flot_options fo
 	    }
 	    elsif ($k eq 'filled' && $v eq 'on') {
 		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
-
 		$fo->{_type_opts}->{fill} = Mojo::JSON->true;
 	    }
 	}
 
 	# Move graph-type related options inside the porper branch
-	if ($fo->{_type} eq 'lines') {
-	    $fo->{series} = { } unless exists $fo->{series};
-	    $fo->{series}->{lines} = $fo->{_type_opts};
-	    delete $fo->{_type_opts};
-	    $fo->{series}->{lines}->{lineWidth} = $fo->{series}->{lines}->{width};
-	    delete $fo->{series}->{lines}->{width};
-	    $fo->{series}->{lines}->{show} = Mojo::JSON->true;
-	    delete $fo->{_type};
-	} elsif ($fo->{_type} eq 'points') {
-	    $fo->{series}->{points} = $fo->{_type_opts};
-	    delete $fo->{_type_opts};
-	    $fo->{series}->{points}->{radius} = $fo->{series}->{points}->{width};
-	    delete $fo->{series}->{points}->{width};
-	    $fo->{series}->{points}->{show} = Mojo::JSON->true;
-	    delete $fo->{_type};
-	} elsif ($fo->{_type} eq 'pie') {
-	    $fo->{series}->{pie} = $fo->{_type_opts};
-	    delete $fo->{_type_opts};
-	    $fo->{series}->{pie}->{radius} = $fo->{series}->{pie}->{width};
-	    delete $fo->{series}->{pie}->{width};
-	    $fo->{series}->{pie}->{show} = Mojo::JSON->true;
-	    delete $fo->{_type};
-	}
-
+	$fo->{$fo->{_type}} = { } unless exists $fo->{$fo->{_type}};
+	$fo->{lines} = $fo->{_type_opts};
+	delete $fo->{_type_opts};
+	delete $fo->{_type};
 
 	my $json_opts = $json->encode($fo);
 
 	# Merge everything into an item of the graph list
-	push @{$graphs}, { id => $row[0], name => $row[1], desc => $row[2],
-			   data => $json_data, options => $json_opts };
+	push @{$graphs}, { id => $row[0], name => $row[1], desc => $row[2], options => $json_opts };
 
 	# remove the default graphs already selected from the select list
 	delete $defg{$row[0]};

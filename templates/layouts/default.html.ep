@@ -10,19 +10,9 @@
     <link rel="stylesheet" media="all" type="text/css" href="<%= url_for '/' %>css/jquery-ui.css" />
     <link rel="stylesheet" media="all" type="text/css" href="<%= url_for '/' %>css/auditools.css" />
 
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.core.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.datepicker.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.widget.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.mouse.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.draggable.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.sortable.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.ui.resizable.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.flot.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.flot.pie.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.flot.selection.js"></script>
-    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.flot.stack.js"></script>
-
+    <script type="text/javascript" src="<%= url_for '/' %>js/jquery.min.js"></script>
+    <script type="text/javascript" src="<%= url_for '/' %>js/flotr2.min.js"></script>
+    <script type="text/javascript" src="<%= url_for '/' %>js/probe.js"></script>
   </head>
 
   <body>

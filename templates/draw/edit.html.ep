@@ -60,7 +60,7 @@
       <div class="graph" id="graph_area"></div>
     </div>
 
-    <div><ul id="legend"></ul></div>
+    <div id="legend"></div>
 
     <div style="clear: both;">&nbsp;</div>
   </div>
@@ -70,18 +70,20 @@
     <ol>
       <li>
 	<fieldset>
+% if (defined $form{probe_id}) {
 	  <label><%= radio_button save_action => 'sc', checked => 'checked', id => 'savegraph' %>
 	    Fork the current graph and use the new one in the selection</label>
-
-% if (defined $form{probe_id}) {
-      <label><%= radio_button save_action => 'ow', id => 'overwrite' %>
-	Overwrite the default graph</label>
+	  <label><%= radio_button save_action => 'ow', id => 'overwrite' %>
+	    Overwrite the default graph</label>
+% } else {
+	  <label><%= radio_button save_action => 'sc', checked => 'checked', id => 'savegraph' %>
+	    Update the graph</label>
 % }
-      <label><%= radio_button save_action => 'an', id => 'asnew' %>
-	Save as a new graph and select it</label>
-      <label><%= radio_button save_action => 'and', id => 'asnewdef' %>
-	  Create a new default graph for a probe:</label>
-	<label class="radioselect"><%= select_field probe => $form{probes}, selected => $form{probe} %></label>
+	  <label><%= radio_button save_action => 'an', id => 'asnew' %>
+	    Save as a new graph and select it</label>
+	  <label><%= radio_button save_action => 'and', id => 'asnewdef' %>
+	    Create a new default graph for a probe:</label>
+	  <label class="radioselect"><%= select_field probe => $form{probes}, selected => $form{probe} %></label>
       </li>
     </ol>
     </fieldset>
