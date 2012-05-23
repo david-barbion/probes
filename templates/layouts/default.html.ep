@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <base href="/" />
     <title><%= config->{title} %></title>
@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="<%= url_for '/' %>css/style.css" title="Default" type="text/css" />
     <link rel="shortcut icon" href="<%= url_for '/' %>images/favicon.ico" type="image/x-icon" />
 
-    <link rel="stylesheet" media="all" type="text/css" href="<%= url_for '/' %>css/jquery-ui.css" />
     <link rel="stylesheet" media="all" type="text/css" href="<%= url_for '/' %>css/auditools.css" />
 
     <script type="text/javascript" src="<%= url_for '/' %>js/jquery.min.js"></script>
@@ -23,8 +22,10 @@
         </div>
         <div id="menu">
           <ul>
-            <li><a href="<%= url_for '/' %>" title="Results">Results</a></h1>
+	    <li><a href="<%= url_for 'probes_script' %>" title="Script">Script</a></h1>
+            <li><a href="<%= url_for '/' %>" title="Graphs">Graphs</a></h1>
             <li><a href="<%= url_for 'probes_list' %>" title="Probes">Probes</a></h1>
+
           </ul>
         </div>
       </div> <!-- header -->

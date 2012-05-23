@@ -47,32 +47,22 @@ sub data {
     # ]
 
     my $points = { };
-    my ($xmin, $xmax, $ymin, $ymax);
     # Group points together to form the serie
     while (my $hrow = $sth->fetchrow_hashref()) {
 	foreach my $col (keys %{$hrow}) {
 	    # Flotr2 has issues with the autoscale feature, so we
 	    # compute the min and max values of the two axis and
 	    # hardcode them in the graph options
-	    if ($col eq 'start_ts') {
-		$xmin = $hrow->{$col} if !defined $xmin or $xmin > $hrow->{$col};
-		$xmax = $hrow->{$col} if !defined $xmax or $xmax < $hrow->{$col};
-		next;
-	    } else  {
-		$ymin = $hrow->{$col} if !defined $ymin or $ymin > $hrow->{$col};
-		$ymax = $hrow->{$col} if !defined $ymax or $ymax < $hrow->{$col};
-	    }
+	    next if ($col eq 'start_ts');
 
 	    # The x axis must be named start_ts in the query
 	    if (!exists($points->{$col})) {
 		$points->{$col} = [ ];
 	    }
-	    push @{$points->{$col}}, [ $hrow->{'start_ts'}, $hrow->{$col} ];
+	    next if ! defined $hrow->{$col};
+	    push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
 	}
     }
-
-    # Add a 1% margin on top of the graph
-    $ymax += $ymax * 0.01;
 
     # Group the series data in a list of hashes: this what flot wants
     my $data = [ ];
@@ -81,12 +71,7 @@ sub data {
     }
 
     # Add the scale values
-    my $series = { data => $data,
-		   scale => { xmin => $xmin,
-			      xmax => $xmax,
-			      ymin => $ymin,
-			      ymax => $ymax }
-		 };
+    my $series = { data => $data };
 
     $sth->finish;
     $dbh->commit;
@@ -266,6 +251,8 @@ WHERE ps.nsp_name = ?});
     if (scalar(@{$changes->{orphans}})) {
 	$self->session->{draw_list_save_changes} = $changes;
 	$self->session->{origin} = 'draw_list';
+	$dbh->commit;
+	$dbh->disconnect;
 
 	return $self->redirect_to('draw_orphans', nsp => $nsp);
     }
@@ -628,7 +615,7 @@ FROM flot_options fo
 	while (my ($k, $v) = each %options) {
 	    if ($k eq 'stacked' && $v eq 'on') {
 		$fo->{_type_opts} = { } unless exists $fo->{_type_opts};
-		$fo->{_type_opts}->{staked} = Mojo::JSON->true;
+		$fo->{_type_opts}->{stacked} = Mojo::JSON->true;
 	    }
 	    elsif ($k eq 'legend-cols') {
 		$fo->{legend} = { } unless exists $fo->{legend};
@@ -651,9 +638,11 @@ FROM flot_options fo
 	    }
 	}
 
+	#$fo->{_type_opts}->{steps} = Mojo::JSON->true;
+
 	# Move graph-type related options inside the porper branch
 	$fo->{$fo->{_type}} = { } unless exists $fo->{$fo->{_type}};
-	$fo->{lines} = $fo->{_type_opts};
+	$fo->{$fo->{_type}} = $fo->{_type_opts};
 	delete $fo->{_type_opts};
 	delete $fo->{_type};
 

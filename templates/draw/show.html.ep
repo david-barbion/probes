@@ -39,7 +39,6 @@
       <div class="graph"></div>
       <div class="legend"></div>
 
-      <div class="debug"></div>
     </div>
 
     <script type="text/javascript">
