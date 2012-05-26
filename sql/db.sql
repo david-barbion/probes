@@ -59,7 +59,8 @@ create table graphs (
        id serial primary key,
        graph_name text not null,
        description text,
-       query text not null
+       query text not null,
+       filter_query text
 );
 
 -- saved graphs for use with any probe

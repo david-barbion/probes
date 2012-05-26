@@ -29,30 +29,23 @@
     </ul>
   </div>
 
-  <div class="block_body">
+  <div id="gbox<%= $graph{id} %>"></div>
 
-    <div id="gbox<%= $graph{id} %>"class="graph_container">
-
-      <input type="hidden" name="id" value="<%= $graph{id} %>" />
-      <input type="hidden" name="nsp" value="<%= $nsp %>" />
-
-      <div class="graph"></div>
-      <div class="legend"></div>
-
-    </div>
-
-    <script type="text/javascript">
-      $(document).ready(function () {
-          $("#gbox<%= $graph{id} %>").probe({
-              namespace: "<%= $nsp %>",
-              id: <%= $graph{id} %>,
-              options: <%== $graph{options}%>,
-              title: "<%= $graph{name} %>",
-              desc: "<%= $graph{desc} %>",
-          });
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $("#gbox<%= $graph{id} %>").probe({
+          saveButton: "#save<%= $graph{id} %>",
+          options: <%== $graph{options}%>,
+          data: {
+            namespace: "<%= $nsp %>",
+            id: <%= $graph{id} %>
+          },
+          title: "<%= $graph{name} %>",
+          desc: "<%= $graph{desc} %>"
       });
-    </script>
-  </div>
+    });
+  </script>
+
 </div>
 %     }
 

@@ -11,60 +11,73 @@
 
 </div>
 
-<script type="text/javascript" src="<%= url_for '/' %>js/auditools.js"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+      $("#gbox").probe({
+          controls: ".controls",
+          drawButton: "#add_graph"
+      });
+
+      $('li#presets select').change(function () {
+          var p = JSON.parse($(this).val());
+
+          $('#query').text(p.query);
+          if (p.filter_query !== null)
+              $('#filter_query').text(p.filter_query);
+      });
+    });
+</script>
 
 <div id="form" class="block">
   <%= form_for draw_add => (method => 'POST', class => 'cmxform') => begin %>
-  <%= hidden_field nsp => $nsp %>
+  <div class="controls">
+    <%= hidden_field nsp => $nsp %>
 
-  <fieldset>
-    <legend>Graph details</legend>
-    <ol>
-      <li id="presets"><label for="presets">Presets:</label>
-	<%= select_field preset => $presets %>
-      </li>
-      <li>
-	<label for="name">Graph name:</label>
-	<%= text_field 'graph_name', size => 72, id => 'name' %>
-      </li>
-      <li>
-	<label for="desc">Description:</label>
-	<%= text_area graph_desc => (rows => 3, cols => 70, id => 'desc') => begin %><% end %>
-      </li>
-      <li>
-	<label for="query">Query:</label>
-	<%= text_area query => (rows => 7, cols => 70, id => 'query') => begin %><% end %>
-      </li>
-      <li>
-	<fieldset>
-	  <legend>Options:</legend>
-	  <label><%= radio_button 'graph-type' => 'lines', id => 'graph-line' %> Lines
-	    <%= radio_button 'graph-type' => 'points', id => 'graph-points' %> Points
-	    <%= radio_button 'graph-type' => 'pie', id => 'graph-pie' %> Pie
-	  </label>
-	  <label>Series width: <%= text_field 'series-width', size => 3, id => 'series-width' %></label>
-	  <label><%= check_box stacked => 'on', id => 'stacked' %> Stacked?</label>
-	  <label><%= check_box filled => 'on', id => 'filled' %> Filled?</label>
-	  <label><%= check_box 'show-legend' => 'on', id => 'show-legend' %> Show legend in graph?</label>
-	  <label>Legend cols: <%= text_field 'legend-cols', size => 3, id => 'legend-cols' %></label>
-	</fieldset>
-      </li>
-    </ol>
-  </fieldset>
+    <fieldset>
+      <legend>Graph details</legend>
+      <ol>
+	<li id="presets"><label for="presets">Presets:</label>
+	  <%= select_field preset => $presets %>
+	</li>
+	<li>
+	  <label for="name">Graph name:</label>
+	  <%= text_field 'graph_name', size => 72, id => 'name' %>
+	</li>
+	<li>
+	  <label for="desc">Description:</label>
+	  <%= text_area graph_desc => (rows => 3, cols => 70, id => 'desc') => begin %><% end %>
+	</li>
+	<li>
+	  <label for="query">Query:</label>
+	  <%= text_area query => (rows => 7, cols => 70, id => 'query') => begin %><% end %>
+	</li>
+	<li>
+	  <label for="filter_query">Filter query:</label>
+	  <%= text_area filter_query => (rows => 7, cols => 70, id => 'filter_query') => begin %><% end %>
+	</li>
+	<li>
+	  <fieldset>
+	    <legend>Options:</legend>
+	    <label><%= radio_button 'graph-type' => 'lines', id => 'graph-line' %> Lines
+	      <%= radio_button 'graph-type' => 'points', id => 'graph-points' %> Points
+	      <%= radio_button 'graph-type' => 'pie', id => 'graph-pie' %> Pie
+	    </label>
+	    <label>Series width: <%= text_field 'series-width', size => 3, id => 'series-width' %></label>
+	    <label><%= check_box stacked => 'on', id => 'stacked' %> Stacked?</label>
+	    <label><%= check_box filled => 'on', id => 'filled' %> Filled?</label>
+	    <label><%= check_box 'show-legend' => 'on', id => 'show-legend' %> Show legend in graph?</label>
+	    <label>Legend cols: <%= text_field 'legend-cols', size => 3, id => 'legend-cols' %></label>
+	  </fieldset>
+	</li>
+      </ol>
+    </fieldset>
 
-  <div class="submit">
-    <input type="button" id="add_graph" name="add_graph" value="Graph" />
-  </div>
-
-  <div class="block_body">
-    <div id="graph_box" style="width:700px;height:300px;">
-      <div class="graph" id="graph_area"></div>
+    <div class="submit">
+      <input type="button" id="add_graph" name="add_graph" value="Graph" />
     </div>
-
-    <div><ul id="legend"></ul></div>
-
-    <div style="clear: both;">&nbsp;</div>
   </div>
+
+  <div id="gbox"></div>
 
   <fieldset>
     <legend>Save options</legend>

@@ -1,58 +1,87 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
+% my @probes = @{stash 'probes'};
 <div class="block">
 
   <h2>Available graphs for <%= $set %></h2>
 
   <p><%= $set_desc %></p>
 
-<div id="page_nav" class="block_head">
-  <ul class="submenu">
-    <li><%= link_to home => (class => "link") => begin %>Back to probe sets<% end %></li>
-    <li><%= link_to draw_add => { nsp => $nsp } => (class => "link") => begin %>Add a new graph<% end %></li>
-  </ul>
+  <div id="page_nav" class="block_head">
+    <ul class="submenu">
+      <li><%= link_to home => (class => "link") => begin %>Back to results<% end %></li>
+      <li><%= link_to draw_add => { nsp => $nsp } => (class => "link") => begin %>Add a new graph<% end %></li>
+    </ul>
+  </div>
+
+  <div id="graphs" class="block_body">
+    % if (scalar(@graphs)) {
+    <%= form_for draw_list_save => (method => 'POST') => begin %>
+    <table class="block_table">
+      <tr>
+	<th>&nbsp;</th>
+	<th>Name</th>
+	<th>Description</th>
+	<th>&nbsp;</th>
+      </tr>
+      %     foreach my $g (@graphs) {
+      %         my %line = %{$g};
+      <tr>
+	<td>
+	  <input type="checkbox" name="selection" value="<%= $line{id} %>" <% if ($line{saved}) { %>checked<% } %> />
+	</td>
+	<td>
+	  <%= $line{name} %>
+	</td>
+	<td>
+	  <%= $line{desc} %>
+	</td>
+	<td>
+	  <%= link_to draw_edit => {nsp => $nsp, id => $line{id}} => begin %>Edit<% end %>
+	  %         if (exists $line{removable}) {
+	  <%= link_to draw_remove => {nsp => $nsp, id => $line{id}} => begin %>Delete<% end %>
+	  %         }
+	</td>
+      </tr>
+      %     }
+    </table>
+
+    <p>
+      <%= submit_button 'Save selection', name => 'submit_save' %>
+      <%= submit_button 'Show selection', name => 'submit_show' %>
+    </p>
+    <% end %>
+    % } else {
+    <p>No graphs found</p>
+    % }
+  </div>
 </div>
 
-<div id="graphs" class="block_body">
-% if (scalar(@graphs)) {
-  <%= form_for draw_list_save => (method => 'POST') => begin %>
-  <table class="block_table">
-    <tr>
-      <th>&nbsp;</th>
-      <th>Name</th>
-      <th>Description</th>
-      <th>&nbsp;</th>
-    </tr>
-%     foreach my $g (@graphs) {
-%         my %line = %{$g};
-    <tr>
-      <td>
-	<input type="checkbox" name="selection" value="<%= $line{id} %>" <% if ($line{saved}) { %>checked<% } %> />
-      </td>
-      <td>
-	<%= $line{name} %>
-      </td>
-      <td>
-	<%= $line{desc} %>
-      </td>
-      <td>
-	<%= link_to draw_edit => {nsp => $nsp, id => $line{id}} => begin %>Edit<% end %>
-%         if (exists $line{removable}) {
-	<%= link_to draw_remove => {nsp => $nsp, id => $line{id}} => begin %>Delete<% end %>
-%         }
-      </td>
-    </tr>
-%     }
-  </table>
+<div class="block">
 
-  <p>
-  <%= submit_button 'Save selection', name => 'submit_save' %>
-  <%= submit_button 'Show selection', name => 'submit_show' %>
-  </p>
-  <% end %>
-% } else {
-  <p>No graphs found</p>
-% }
-</div>
+  <h2>Used probes</h2>
+
+  % if (scalar(@graphs)) {
+  <div class="block_body">
+    <table class="block_table">
+      <tr>
+	<th>Name</th>
+	<th>Description</th>
+      </tr>
+      %     foreach my $p (@probes) {
+      %         my %line = %{$p};
+      <tr>
+	<td>
+	  <%= $line{name} %>
+	</td>
+	<td>
+	  <%= $line{desc} %>
+	</td>
+      </tr>
+      %     }
+    </table>
+  </div>
+  % }
+
 
 </div>

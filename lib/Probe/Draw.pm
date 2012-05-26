@@ -7,9 +7,10 @@ use Data::Dumper;
 sub data {
     my $self = shift;
 
-    my $nsp = $self->param('nsp');
+    my $nsp = $self->param('namespace');
     my $q = $self->param('query');
-    my $id_graph = $self->param('id_graph');
+    my $id_graph = $self->param('id');
+    my $fq = $self->param('filter_query');;
 
     my $dbh = $self->database;
 
@@ -18,9 +19,9 @@ sub data {
 
     # When we get an id on input, retrive the query
     if (defined $id_graph) {
-	my $sth = $dbh->prepare(qq{SELECT query FROM graphs WHERE id = ?});
+	my $sth = $dbh->prepare(qq{SELECT query, filter_query FROM graphs WHERE id = ?});
 	$sth->execute($id_graph);
-	($q) = $sth->fetchrow();
+	($q, $fq) = $sth->fetchrow();
 	$sth->finish;
     }
 
@@ -30,54 +31,108 @@ sub data {
     	return $self->render_json({ error => "query is not defined" });
     }
 
-    # Get the results of the graph query
-    my $sth = $dbh->prepare($q);
-    unless ($sth->execute()) {
-    	$dbh->rollback;
-    	$dbh->disconnect;
-    	return $self->render_json({ error => "query execution failed" });
-    }
+    my $data = [];
+    if ($q =~ m!\?!s) {
 
-    # Flot output
-    # [ {
-    #    "label": "serie",
-    #    "data": [ [timestamp, valeur], ... ]
-    #    },
-    #    { ... }
-    # ]
-
-    my $points = { };
-    # Group points together to form the serie
-    while (my $hrow = $sth->fetchrow_hashref()) {
-	foreach my $col (keys %{$hrow}) {
-	    # Flotr2 has issues with the autoscale feature, so we
-	    # compute the min and max values of the two axis and
-	    # hardcode them in the graph options
-	    next if ($col eq 'start_ts');
-
-	    # The x axis must be named start_ts in the query
-	    if (!exists($points->{$col})) {
-		$points->{$col} = [ ];
-	    }
-	    next if ! defined $hrow->{$col};
-	    push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
+	# There are place holders in the query
+	if (defined $fq and $fq =~ m!^\s*$!s) {
+	    $dbh->rollback;
+	    $dbh->disconnect;
+	    return $self->render_json({ error => "empty filter query" });
 	}
+
+	my $sth = $dbh->prepare($fq);
+	unless ($sth->execute()) {
+	    $dbh->rollback;
+	    $dbh->disconnect;
+	    return $self->render_json({ error => "filter query execution failed" });
+	}
+
+	my $filters = [];
+	while (my @row = $sth->fetchrow()) {
+	    push @{$filters}, \@row;
+	}
+	$sth->finish;
+
+	foreach my $f (@{$filters}) {
+	    $sth = $dbh->prepare($q);
+	    unless ($sth->execute(@{$f})) {
+		$dbh->rollback;
+		$dbh->disconnect;
+		return $self->render_json({ error => "query execution failed" });
+	    }
+
+	    my $points = { };
+	    # Group points together to form the serie
+	    while (my $hrow = $sth->fetchrow_hashref()) {
+		foreach my $col (keys %{$hrow}) {
+		    next if ($col eq 'start_ts');
+
+		    # The x axis must be named start_ts in the query
+		    if (!exists($points->{$col})) {
+			$points->{$col} = [ ];
+		    }
+		    next if ! defined $hrow->{$col};
+		    push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
+		}
+	    }
+	    $sth->finish;
+
+	    # Group the series data in a list of hashes: this what flot wants
+	    my $series = [ ];
+	    foreach my $s (keys %{$points}) {
+		push @{$series}, { label => $s, data => $points->{$s} };
+	    }
+
+	    push @{$data}, { filters => $f, series => $series };
+	}
+    } else {
+
+	# Get the results of the graph query
+	my $sth = $dbh->prepare($q);
+	unless ($sth->execute()) {
+	    $dbh->rollback;
+	    $dbh->disconnect;
+	    return $self->render_json({ error => "query execution failed" });
+	}
+
+	# Flotr2 input:
+	# [ { "label": "serie", "data": [ [timestamp, valeur], ... ] },
+	#   { ... } ]
+
+	my $points = { };
+	# Group points together to form the serie
+	while (my $hrow = $sth->fetchrow_hashref()) {
+	    foreach my $col (keys %{$hrow}) {
+		# Flotr2 has issues with the autoscale feature, so we
+		# compute the min and max values of the two axis and
+		# hardcode them in the graph options
+		next if ($col eq 'start_ts');
+
+		# The x axis must be named start_ts in the query
+		if (!exists($points->{$col})) {
+		    $points->{$col} = [ ];
+		}
+		next if ! defined $hrow->{$col};
+		push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
+	    }
+	}
+
+	# Group the series data in a list of hashes: this what flot wants
+	my $series = [ ];
+	foreach my $s (keys %{$points}) {
+	    push @{$series}, { label => $s, data => $points->{$s} };
+	}
+
+	push @{$data}, { filters => Mojo::JSON->false, series => $series };
+	$sth->finish;
     }
 
-    # Group the series data in a list of hashes: this what flot wants
-    my $data = [ ];
-    foreach my $s (keys %{$points}) {
-	push @{$data}, { label => $s, data => $points->{$s} };
-    }
 
-    # Add the scale values
-    my $series = { data => $data };
-
-    $sth->finish;
     $dbh->commit;
     $dbh->disconnect;
 
-    $self->render_json($series);
+    $self->render_json($data);
 }
 
 sub list {
@@ -150,10 +205,26 @@ WHERE ps.nsp_name = ?});
     $self->stash('set' => $set);
     $self->stash('set_desc' => $set_desc);
 
+
+    # List of probes used in the set
+    $sth = $dbh->prepare(qq{SELECT p.probe_name, p.description 
+FROM probes p
+JOIN probes_in_sets pis ON (pis.id_probe = p.id)
+JOIN probe_sets ps ON (ps.id = pis.id_set)
+WHERE ps.nsp_name = ? ORDER BY 1});
+    $sth->execute($nsp);
+    my $probes = [ ];
+    while (my ($n, $d) = $sth->fetchrow()) {
+	push @{$probes}, { name => $n, desc => $d };
+    }
+    $sth->finish;
+
+    $self->stash(probes => $probes);
+
     $dbh->commit;
     $dbh->disconnect;
 
-    my @list = sort { $a->{name} cmp $b->{name} }values %{$graphs};
+    my @list = sort { $a->{name} cmp $b->{name} } values %{$graphs};
     $self->stash(graphs => \@list);
 
     # set origin for add and edit pages
@@ -714,16 +785,19 @@ sub add {
 	    $e = 1;
 	}
 
+	$form_data->{filter_query} = undef if $form_data->{filter_query} eq '';
+
 	unless ($e) {
 	    my $dbh = $self->database;
 
 	    my $rb = 0;
 	    # add the new graph
-	    my $sth = $dbh->prepare("INSERT INTO graphs (graph_name, description, query)
-VALUES (?, ? , ?) RETURNING id");
+	    my $sth = $dbh->prepare("INSERT INTO graphs (graph_name, description, query, filter_query)
+VALUES (?, ? , ?, ?) RETURNING id");
 	    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
 						 $form_data->{graph_desc},
-						 $form_data->{query});
+						 $form_data->{query},
+						 $form_data->{filter_query});
 
 	    my ($id) = $sth->fetchrow();
 	    $sth->finish;
@@ -786,7 +860,7 @@ VALUES (?, ?, ?)});
     my $dbh = $self->database;
 
     # Find all available graphs for the set to fill presets
-    my $sth = $dbh->prepare(qq{SELECT g.graph_name, g.query FROM graphs g
+    my $sth = $dbh->prepare(qq{SELECT g.graph_name, g.query, g.filter_query FROM graphs g
 JOIN default_graphs dg ON (g.id = dg.id_graph)
 JOIN probes p ON (p.id = dg.id_probe)
 JOIN probes_in_sets pis ON (pis.id_probe = p.id)
@@ -797,8 +871,10 @@ WHERE ps.nsp_name = ? ORDER BY 2
     $sth->execute($nsp);
 
     my $presets = [ '' ];
-    while (my ($i, $q) = $sth->fetchrow()) {
-	my $option = [ $i => $q ];
+    while (my ($i, $q, $f) = $sth->fetchrow()) {
+	my $json = Mojo::JSON->new;
+
+	my $option = [ $i => $json->encode({ query => $q, filter_query => $f}) ];
 	push @{$presets}, $option;
     }
     $sth->finish;
@@ -864,6 +940,8 @@ sub edit {
 	    $e = 1;
 	}
 
+	$form_data->{filter_query} = undef if $form_data->{filter_query} eq '';
+
 	unless ($e) {
 	    my $dbh = $self->database;
 	    my $sth;
@@ -879,10 +957,11 @@ sub edit {
 		# custom_graphs link: do not ovewrite default here. Otherwise,
 		# update graphs
 		if ($form_data->{probe_id}) {
-		    $sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		    $sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query, filter_query) VALUES (?, ?, ?, ?) RETURNING id});
 		    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
 							 $form_data->{graph_desc},
-							 $form_data->{query});
+							 $form_data->{query},
+							 $form_data->{filter_query});
 
 		    my ($new_id) = $sth->fetchrow();
 		    $sth->finish;
@@ -894,31 +973,34 @@ sub edit {
 		    # replace the graph id to set the options later
 		    $id = $new_id;
 		} else {
-		    $sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
+		    $sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ?, filter_query = ? WHERE id = ?});
 		    $rb = 1 unless defined $sth->execute($form_data->{graph_name},
-				  $form_data->{graph_desc},
-				  $form_data->{query},
-				  $id);
+							 $form_data->{graph_desc},
+							 $form_data->{query},
+							 $form_data->{filter_query},
+							 $id);
 		    $sth->finish;
 		}
 	    }
 
 	    if ($form_data->{save_action} eq 'ow') {
 		# overwrite the graph, update graphs
-		$sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ? WHERE id = ?});
+		$sth = $dbh->prepare(qq{UPDATE graphs SET graph_name = ?, description = ?, query = ?, filter_query = ? WHERE id = ?});
 		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
-			      $form_data->{graph_desc},
-			      $form_data->{query},
-			      $id);
+						     $form_data->{graph_desc},
+						     $form_data->{query},
+						     $form_data->{filter_query},
+						     $id);
 		$sth->finish;
 	    }
 
 	    if ($form_data->{save_action} eq 'an') {
 		# insert graph, add a custom link
-		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query, filter_query) VALUES (?, ?, ?, ?) RETURNING id});
 		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
-			      $form_data->{graph_desc},
-			      $form_data->{query});
+						     $form_data->{graph_desc},
+						     $form_data->{query},
+						     $form_data->{filter_query});
 
 		my ($new_id) = $sth->fetchrow();
 		$sth->finish;
@@ -933,10 +1015,11 @@ sub edit {
 
 	    if ($form_data->{save_action} eq 'and') {
 		# insert graph, add a custom link and a default link
-		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query) VALUES (?, ?, ?) RETURNING id});
+		$sth = $dbh->prepare(qq{INSERT INTO graphs (graph_name, description, query, filter_query) VALUES (?, ?, ?, ?) RETURNING id});
 		$rb = 1 unless defined $sth->execute($form_data->{graph_name},
-			      $form_data->{graph_desc},
-			      $form_data->{query});
+						     $form_data->{graph_desc},
+						     $form_data->{query},
+						     $form_data->{filter_query});
 
 		my @row = $sth->fetchrow();
 		my $new_id = $row[0];
@@ -1031,14 +1114,14 @@ FROM flot_options fo
     # the graph is default, this allow to preselect to proper probe in
     # saving div
     my $dbh = $self->database;
-    my $sth = $dbh->prepare("SELECT g.graph_name, g.description, g.query, p.id
+    my $sth = $dbh->prepare("SELECT g.graph_name, g.description, g.query, g.filter_query, p.id
 FROM graphs g
   LEFT JOIN default_graphs dg ON (dg.id_graph = g.id)
   LEFT JOIN probes p ON (p.id = dg.id_probe)
 WHERE g.id = ?");
     $sth->execute($id);
 
-    my ($n, $d, $q, $p) = $sth->fetchrow();
+    my ($n, $d, $q, $f, $p) = $sth->fetchrow();
     $sth->finish;
 
     #
@@ -1051,7 +1134,7 @@ WHERE g.id = ?");
 	return $self->redirect_to($origin, nsp => $nsp);
     }
 
-    my $data = { graph_name => $n, graph_desc => $d, query => $q, probe_id => $p };
+    my $data = { graph_name => $n, graph_desc => $d, query => $q, filter_query => $f, probe_id => $p };
 
     my $options = { };
     # default options
