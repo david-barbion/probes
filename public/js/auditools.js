@@ -52,7 +52,20 @@ utilisation:
 	  autoscaleMargin: 5
 	},
 	yaxis: { },
-	selection : { mode : 'xy', fps : 30 }
+	selection : { mode : 'xy', fps : 30 },
+	mouse: {
+	  track: true,
+	  trackAll: true,
+	  sensitivity: 4,
+	  relative: true,
+	  trackFormatter: function (coor) {
+	    var d = new Date (parseInt(coor.x));
+	    return '<span style="font-size:0.8em;text-align:center;">'+
+	      d.getDate() +'/'+ (d.getMonth()+1) + '/' + d.getFullYear() +'<br/>'+
+	      d.getHours()+':'+d.getMinutes()+':'+d.getSeconds() + '<br />' + coor.y +
+	      '</span>';
+	  }
+	}
       },
       title: null,
       desc: null
@@ -179,7 +192,7 @@ utilisation:
     }
 
     function drawAllGraphs() {
-      var i, c, o, s = false;
+      var i, c, o;
 
       // update the options
       updateGraphOptions();
@@ -187,30 +200,25 @@ utilisation:
       // reset graph area
       zone.empty();
 
-      if (settings.saveButton !== null && data.length > 1) {
-	$(settings.saveButton).hide();
-	s = true;
-      }
-
       // Draw each graph
       for (i = 0; i < data.length; i++) {
 
 	if (data[i].filters) {
-	  c = drawGraphArea(data[i].filters, s);
+	  c = drawGraphArea(data[i].filters);
 	  o = {};
 	  o['title'] = settings.options.title + ' ('+ data[i].filters.join(', ')+')';
 	} else {
-	  c = drawGraphArea(null, s);
+	  c = drawGraphArea(null);
 	}
 
 	drawGraph(c, data[i].series, o);
       }
-
     }
 
-    function drawGraphArea(filters, save) {
+    function drawGraphArea(filters) {
       // redraw all the graph placeholders when the filters query changes
-      var i, area_id;
+      var i, area_id,
+      container, save_link = null;
 
       if (filters !== null) {
 	area_id = 'graph_area_' + filters.join('_');
@@ -220,40 +228,74 @@ utilisation:
 
       // Create graph box
       zone.append('<div  id="'+area_id+'" class="block_body">'+
-		  '  <div class="graph_container">'+
-		  '    <div class="graph"></div>'+
-		  '    <div class="legend"></div>'+
-		  '  </div>');
+		  '<a href="#" class="link graph_save">Save</a>'+
+		  '<div class="graph_container">'+
+		  '<div class="graph"></div>'+
+		  '<div class="legend"></div>'+
+		  '</div>'+
+		  '</div>');
 
-      // Add the save button
-      if (save) {
-	zone.append('<a href="#" class="link">Save</a>');
-      }
+      container = zone.find('#'+area_id).find('.graph')
 
-      zone.append('</div>');
+      // Prepare an empty list to remember zooms
+      container.data('zooms', [ ]);
 
+      return { container: container,
+	       save: zone.find('#'+area_id).find('a') };
+    }
 
+    function drawGraph(area, data, opts) {
+      // draw a graph with Flotr2
+      var o = $.extend(true, {}, settings.options, opts || {}),
+      graph,
+      container = area.container.get(0);
 
-      // Get the container DOM element
-      return zone.find('#'+area_id).find('.graph').get(0);
+      graph = Flotr.draw(container, data, o);
+
+      // Bind the save action
+      area.save.click(function (event) {
+	event.preventDefault();
+	graph.download.saveImage('png');
+      });
 
       // Bind the selection
+      Flotr.EventAdapter.observe(container, 'flotr:select', function (sel, g) {
+	var zoom = {
+          xaxis: {
+	    min: sel.x1,
+	    max: sel.x2
+	  },
+          yaxis: {
+	    min: sel.y1,
+	    max: sel.y2
+	  }
+	},
+	zo = $.extend(true, {}, o, zoom);
 
+	// Save the zoom information
+	var zl = area.container.data('zooms');
+	zl.push(zoom);
+	area.container.data('zooms', zl);
 
+	graph = Flotr.draw(container, data, zo);
+      });
+
+      // When graph is clicked, draw the graph with default area
+      Flotr.EventAdapter.observe(container, 'flotr:click', function () {
+	var zl = area.container.data('zooms'),
+	zoom, zo;
+
+	// Remove the current zoom information and get the previous
+	zl.pop();
+	zoom = zl[zl.length-1];
+
+	zo = $.extend(true, {}, o, zoom || { });
+
+	graph = Flotr.draw(container, data, zo);
+      });
+
+      return graph;
     }
-
-    function drawGraph(container, data, opts) {
-      // draw a graph with Flotr2
-      var o = $.extend(true, {}, settings.options, opts || {});
-
-      return Flotr.draw(container, data, o);
-    }
-
-/*
-    function saveGraph() {
-      // Save a graph to an image
-    }
-*/
 
     setupControls();
 

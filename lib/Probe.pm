@@ -42,7 +42,7 @@ sub startup {
     # Routes
     my $r = $self->routes;
 
-    # Home page and set management (Probe::Site) + upload + script
+    # Home page and set management (Probe::Site) + upload
     $r->route('/')                           ->to('site#home')     ->name('home');
     $r->route('/upload')      ->via('post')  ->to('site#upload')   ->name('upload');
     $r->route('/remove/:id', id => qr/\d+/)  ->to('site#remove')   ->name('remove');

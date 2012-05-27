@@ -63,23 +63,13 @@
 
   % if (scalar(@graphs)) {
   <div class="block_body">
-    <table class="block_table">
-      <tr>
-	<th>Name</th>
-	<th>Description</th>
-      </tr>
-      %     foreach my $p (@probes) {
-      %         my %line = %{$p};
-      <tr>
-	<td>
-	  <%= $line{name} %>
-	</td>
-	<td>
-	  <%= $line{desc} %>
-	</td>
-      </tr>
-      %     }
-    </table>
+    <ul>
+      % foreach my $p (@probes) {
+      %     my %line = %{$p};
+      <li><%= link_to probes_show => { id => $line{id} } => begin %><%= $line{name} %><% end %>:
+	<%= $line{desc} %></li>
+      % }
+    </ul>
   </div>
   % }
 

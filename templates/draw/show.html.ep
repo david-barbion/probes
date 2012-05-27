@@ -23,7 +23,6 @@
     <h3><%= check_box selection => $graph{id}, checked => 'checked' %>
       <%= $graph{name} %></h3>
     <ul class="submenu">
-      <li><a id="save<%= $graph{id} %>" class="link" href="#">Save</a></li>
       <li><%= link_to draw_edit => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Edit<% end %></li>
       <li><%= link_to draw_remove => { nsp => $nsp, id => $graph{id} } => (class => "link") => begin %>Remove<% end %></li>
     </ul>
@@ -34,7 +33,6 @@
   <script type="text/javascript">
     $(document).ready(function () {
       $("#gbox<%= $graph{id} %>").probe({
-          saveButton: "#save<%= $graph{id} %>",
           options: <%== $graph{options}%>,
           data: {
             namespace: "<%= $nsp %>",

@@ -66,14 +66,14 @@ sub data {
 	    # Group points together to form the serie
 	    while (my $hrow = $sth->fetchrow_hashref()) {
 		foreach my $col (keys %{$hrow}) {
-		    next if ($col eq 'start_ts');
+		    next if ($col eq 'stat_ts');
 
-		    # The x axis must be named start_ts in the query
+		    # The x axis must be named stat_ts in the query
 		    if (!exists($points->{$col})) {
 			$points->{$col} = [ ];
 		    }
-		    next if ! defined $hrow->{$col};
-		    push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
+		    next if ! defined $hrow->{$col} || ! defined $hrow->{'stat_ts'};
+		    push @{$points->{$col}}, [ int($hrow->{'stat_ts'}), $hrow->{$col} * 1.0 ];
 		}
 	    }
 	    $sth->finish;
@@ -107,14 +107,14 @@ sub data {
 		# Flotr2 has issues with the autoscale feature, so we
 		# compute the min and max values of the two axis and
 		# hardcode them in the graph options
-		next if ($col eq 'start_ts');
+		next if ($col eq 'stat_ts');
 
-		# The x axis must be named start_ts in the query
+		# The x axis must be named stat_ts in the query
 		if (!exists($points->{$col})) {
 		    $points->{$col} = [ ];
 		}
-		next if ! defined $hrow->{$col};
-		push @{$points->{$col}}, [ int($hrow->{'start_ts'}), $hrow->{$col} * 1.0 ];
+		next if ! defined $hrow->{$col} || ! defined $hrow->{'stat_ts'};
+		push @{$points->{$col}}, [ int($hrow->{'stat_ts'}), $hrow->{$col} * 1.0 ];
 	    }
 	}
 
@@ -207,15 +207,15 @@ WHERE ps.nsp_name = ?});
 
 
     # List of probes used in the set
-    $sth = $dbh->prepare(qq{SELECT p.probe_name, p.description 
+    $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, p.description 
 FROM probes p
 JOIN probes_in_sets pis ON (pis.id_probe = p.id)
 JOIN probe_sets ps ON (ps.id = pis.id_set)
 WHERE ps.nsp_name = ? ORDER BY 1});
     $sth->execute($nsp);
     my $probes = [ ];
-    while (my ($n, $d) = $sth->fetchrow()) {
-	push @{$probes}, { name => $n, desc => $d };
+    while (my ($i, $n, $d) = $sth->fetchrow()) {
+	push @{$probes}, { id => $i, name => $n, desc => $d };
     }
     $sth->finish;
 
@@ -874,7 +874,7 @@ WHERE ps.nsp_name = ? ORDER BY 2
     while (my ($i, $q, $f) = $sth->fetchrow()) {
 	my $json = Mojo::JSON->new;
 
-	my $option = [ $i => $json->encode({ query => $q, filter_query => $f}) ];
+	my $option = [ $i => $json->encode({ query => $q, filter_query => $f ||= ''}) ];
 	push @{$presets}, $option;
     }
     $sth->finish;
@@ -1134,7 +1134,7 @@ WHERE g.id = ?");
 	return $self->redirect_to($origin, nsp => $nsp);
     }
 
-    my $data = { graph_name => $n, graph_desc => $d, query => $q, filter_query => $f, probe_id => $p };
+    my $data = { graph_name => $n, graph_desc => $d, query => $q, filter_query => $f ||= '', probe_id => $p };
 
     my $options = { };
     # default options
