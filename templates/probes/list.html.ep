@@ -17,6 +17,7 @@
 	<th>Probe</th>
 	<th>Description</th>
 	<th>Minimum version</th>
+	<th>Type</th>
 	<th>&nbsp;</th>
 	<th>&nbsp;</th>
       </tr>
@@ -31,6 +32,9 @@
 	</td>
 	<td>
 	  <%= $line{version} %>
+	</td>
+	<td>
+	  <%= $line{type} %>
 	</td>
 	<td>
 	  <%= link_to probes_edit => { id => $line{id} } => begin %>Edit<% end %>

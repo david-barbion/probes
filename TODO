@@ -6,17 +6,5 @@ everything:
 
 draw show
 - add interaction:
-  * interval selection
   * show/hide series ?
-- catch errors in graph query execution and display a message
 
-draw data
-- catch errors in graph query execution and display a message
-
-probes:
-- implement other probe types inside probe_runner.pl
-
-Before publish:
-- export to image
-- upload
-- multiple queries

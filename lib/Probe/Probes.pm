@@ -7,12 +7,15 @@ sub list {
     my $self = shift;
 
     my $dbh = $self->database;
-    my $sth = $dbh->prepare(qq{SELECT id, probe_name, description, version, enabled FROM probes ORDER BY 2});
+    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, p.description, p.version, p.enabled, t.probe_type
+FROM probes p
+JOIN probe_types t ON (p.probe_type = t.id)
+ORDER BY t.probe_type, p.probe_name, p.version DESC});
     $sth->execute();
     my $probes = [ ];
-    while (my ($i, $n, $d, $v, $e) = $sth->fetchrow()) {
+    while (my ($i, $n, $d, $v, $e, $t) = $sth->fetchrow()) {
 	push @{$probes}, { id => $i, probe_name => $n, description => $d,
-			   version => $v, enabled => $e };
+			   version => $v, enabled => $e, type => $t };
     }
     $sth->finish;
     $dbh->commit;
@@ -362,7 +365,7 @@ WHERE p.enabled = true AND p.id = ?});
     my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, t.probe_type, p.description, p.version
 FROM probes p
 JOIN probe_types t ON (p.probe_type = t.id)
-WHERE enabled = true ORDER BY 2, 3});
+WHERE enabled = true ORDER BY 3, 2});
     $sth->execute;
     my $probes = [ ];
     while (my ($i, $n, $t, $d, $v) = $sth->fetchrow()) {

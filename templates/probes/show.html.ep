@@ -5,6 +5,7 @@
 
   <div id="page_nav" class="block_head">
     <ul class="submenu">
+      <li><%= link_to probes_list => (class => "link") => begin %>Back to list<% end %></li>
       <li><%= link_to probes_add => (class => "link") => begin %>New probe<% end %></li>
       <li><%= link_to probes_edit => { id => $id } => (class => "link") => begin %>Edit<% end %></li>
       <li><%= link_to probes_remove => { id => $id } => (class => "link") => begin %>Delete<% end %></li>

@@ -388,7 +388,7 @@ WHERE p.id = ?});
 		    while (my $f = <$workdir/$basename/$sp*>) {
 			next if (! -f $f || ($p->{type} eq 'sar' && $f !~ m!/sa\d+$!));
 			my $cmd = $p->{preload};
-			$cmd =~ s!\%f!$f!;
+			$cmd =~ s!\%f!$f!g;
 
 			my $rc = system($cmd . " >> " . $output);
 			if ($rc) {
