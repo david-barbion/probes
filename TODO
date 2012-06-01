@@ -8,3 +8,8 @@ draw show
 - add interaction:
   * show/hide series ?
 
+probes
+- clone probe
+
+script
+- run the preload command when packing and limit the time range of output to the run
