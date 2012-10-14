@@ -85,23 +85,8 @@ body {
 
 /* Messages
 --------------------------------------------------- */
-#messages {
-    margin: 0;
-    padding: 0;
-}
-
-#messages h5 {
-    display: none;
-}
-
 #messages ul {
-    margin: 10px;
-    padding: 10px;
-}
-
-#messages li {
-    list-style-type: none;
-    padding-left: 5px;
+    margin: 5px;
 }
 
 .messages_success {

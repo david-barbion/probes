@@ -15,19 +15,19 @@ sub register {
 		     my $html;
 
 		     if (@{$self->msg_lists->{debug}}) {
-			 $html .= qq{<ul class="messages_debug">\n};
+			 $html .= qq{<div class="alert alert-info"><ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{debug}});
-			 $html .= qq{</ul>};
+			 $html .= qq{</ul></div>};
 		     }
 
 		     if (@{$self->msg_lists->{error}}) {
-			 $html .= qq{<ul class="messages_failure">\n};
+			 $html .= qq{<div class="alert alert-error"><ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{error}});
 			 $html .= qq{</ul>};
 		     }
 
 		     if (@{$self->msg_lists->{info}}) {
-			 $html .= qq{<ul class="messages_success">\n};
+			 $html .= qq{<div class="alert alert-success"><ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{info}});
 			 $html .= qq{</ul>};
 		     }
