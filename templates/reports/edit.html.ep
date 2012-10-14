@@ -1,0 +1,132 @@
+% layout 'default';
+<h2>Edit report</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to reports_list => (class => "btn") => begin %>Back to list<% end %>
+</div>
+
+<div style="clear:both;margin-top:30px;"></div>
+
+<div id="form" class="span8">
+  <%= form_for reports_edit => (method => 'POST', class => 'form-horizontal') => begin %>
+  <fieldset>
+      <legend>Report details</legend>
+
+      <div class="control-group">
+	<label class="control-label strong" for="name">Report name:</label>
+	<div class="controls">
+	  <%= text_field 'report_name', type => 'text', class => 'span6', id => 'name' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="desc">Description:</label>
+	<div class="controls">
+	  <%= text_area report_desc => (rows => 3, id => 'desc', class => 'span6') => begin %><% end %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label strong">Data:</label>
+	<div class="controls">
+	  <%= select_field result => $results %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label">Graphs:</label>
+	<div class="controls">
+% if (scalar @{$graphs}) {
+          <ul id="graphs" class="unstyled">
+%     foreach my $i (@{$graphs}) {
+%         my %g = %{$i};
+            <li><label class="checkbox"><%= check_box selection => $g{id} %> <%= $g{name} %></label></li>
+%     }
+	  </ul>
+% } else {
+          <p>No graphs found</p>
+% }
+
+  </fieldset>
+
+  <div class="form-actions">
+    <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+    <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+  </div>
+  <% end %>
+</div>
+
+<script>
+$(document).ready(function() {
+  var data = [];
+% foreach my $r (keys %{$gfilter}) {
+  data[<%== $r %>] = <%== $gfilter->{$r} %>;
+% }
+  var all = <%== $gall %>;
+  var id = <%== param 'result' %>;
+  var sel = <%== $gsel %>;
+  var error = <%== $error %>;
+
+  if ($("select[name=result]").val() == '') {
+    $("#graphs").find('input[name=selection]').each(function () {
+      $(this).prop("checked", false);
+      $(this).prop("disabled", true);
+    });
+  } else {
+    if (typeof data[$("select[name=result]").val()] != 'undefined') {
+      all.forEach(function(x, idx) {
+        if (data[$("select[name=result]").val()].indexOf(x) < 0) {
+          // disable graphs not available for the result
+          $("#graphs").find('input[name=selection][value='+ x +']').prop("disabled", true);
+        }
+      });
+      if ($("select[name=result]").val() == id && !error) {
+        sel.forEach(function(x, idx) {
+          $("#graphs").find('input[name=selection][value='+ x +']').prop("checked", true);
+        });
+      }
+    }
+  }
+
+  $("select[name=result]").change(function() {
+    var i;
+
+    $("#graphs").find('input[name=selection]').each(function () {
+      $(this).prop("checked", false);
+      $(this).prop("disabled", false);
+    });
+
+    i = $(this).val();
+
+    // some graphs exist for the chosen result
+    if (typeof data[i] != 'undefined') {
+      if (i == id) {
+        all.forEach(function(x, idx) {
+          if (data[i].indexOf(x) < 0) {
+            // disable graphs not available for the result
+            $("#graphs").find('input[name=selection][value='+ x +']').prop("disabled", true);
+          }
+        });
+        sel.forEach(function(x, idx) {
+          $("#graphs").find('input[name=selection][value='+ x +']').prop("checked", true);
+        });
+      } else {
+        all.forEach(function(x, idx) {
+          if (data[i].indexOf(x) < 0) {
+            // disable graphs not available for the result
+            $("#graphs").find('input[name=selection][value='+ x +']').prop("disabled", true);
+          } else {
+            // preselect available graphs
+            $("#graphs").find('input[name=selection][value='+ x +']').prop("checked", true);
+          }
+        });
+      }
+    } else {
+      $("#graphs").find('input[name=selection]').each(function () {
+        $(this).prop("checked", false);
+        $(this).prop("disabled", true);
+      });
+    }
+  });
+});
+</script>

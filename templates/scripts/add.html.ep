@@ -1,0 +1,77 @@
+% layout 'default';
+% my @probes = @{stash 'probes'};
+<h2>Add a new script</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to scripts_list => (class => "btn") => begin %>Back to list<% end %>
+</div>
+
+<div style="clear:both;margin-top:30px;"></div>
+
+<div id="form" class="span8">
+  <%= form_for scripts_add => (method => 'POST', class => 'form-horizontal') => begin %>
+
+  <fieldset>
+    <legend>Script definition</legend>
+
+    <div class="control-group">
+      <label class="control-label strong" for="name">Script name:</label>
+      <div class="controls">
+	<%= text_field 'script_name', type => 'text', class => 'span6', id => 'name' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="desc">Description:</label>
+      <div class="controls">
+	<%= text_area script_desc => (rows => 3, id => 'desc', class => 'span6') => begin %><% end %>
+      </div>
+    </div>
+
+  </fieldset>
+
+  <fieldset>
+    <legend>Probes</legend>
+
+    <!-- table -->
+% if (scalar(@probes)) {
+    <table class="table table-condensed table-striped">
+      <tr>
+	<th><i class="icon-check" id="chkall"></th>
+	<th>Probe</th>
+	<th>Description</th>
+	<th>Min. version</th>
+	<th>Max. version</th>
+	<th>Type</th>
+      </tr>
+%     foreach my $probe (@probes) {
+%         my %p = %{$probe};
+      <tr>
+	<td><%= check_box probes => $p{id}, class => 'checkbox' %></td>
+	<td><%= $p{name} %></td>
+	<td><%= $p{desc} %></td>
+	<td><%= $p{min_vers} %></td>
+	<td><%= $p{max_vers} %></td>
+	<td><%= $p{type} %></td>
+      </tr>
+%     }
+    </table>
+% } else {
+    <p>No probe found</p>
+% }
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+  </fieldset>
+  <% end %>
+</div>
+
+<script>
+$("#chkall").click(function() {
+    $("#form").find("input[type=checkbox]").each(function(i) {
+        $(this).prop("checked", !$(this).prop("checked"));
+    });
+});
+</script>

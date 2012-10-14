@@ -7,15 +7,17 @@ sub list {
     my $self = shift;
 
     my $dbh = $self->database;
-    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, p.description, p.version, p.enabled, t.probe_type
+    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, p.description, p.min_version, p.max_version, p.enabled, t.probe_type, u.username
 FROM probes p
 JOIN probe_types t ON (p.probe_type = t.id)
-ORDER BY t.probe_type, p.probe_name, p.version DESC});
+JOIN users u ON (p.id_owner = u.id)
+ORDER BY t.probe_type, p.probe_name, p.min_version DESC});
     $sth->execute();
     my $probes = [ ];
-    while (my ($i, $n, $d, $v, $e, $t) = $sth->fetchrow()) {
+    while (my ($i, $n, $d, $iv, $av, $e, $t, $o) = $sth->fetchrow()) {
 	push @{$probes}, { id => $i, probe_name => $n, description => $d,
-			   version => $v, enabled => $e, type => $t };
+			   min_version => $iv, max_version => $av, enabled => $e,
+			   type => $t, owner => $o };
     }
     $sth->finish;
     $dbh->commit;
@@ -35,10 +37,14 @@ sub show {
     my $id = $self->param('id');
 
     my $dbh = $self->database;
-    my $sth = $dbh->prepare(qq{SELECT p.probe_name, t.probe_type, p.description, p.version, p.command, p.preload_command, p.target_ddl_query, p.source_path, p.enabled FROM probes p JOIN probe_types t ON (p.probe_type = t.id) WHERE p.id = ?});
+    my $sth = $dbh->prepare(qq{SELECT p.probe_name, t.probe_type, p.description, coalesce(p.min_version, 'None'),
+  coalesce(p.max_version, 'None'), p.command, p.preload_command, p.target_ddl_query, p.source_path, p.enabled
+FROM probes p
+JOIN probe_types t ON (p.probe_type = t.id)
+WHERE p.id = ?});
     $sth->execute($id);
 
-    my ($n, $t, $d, $v, $q, $pc, $dq, $sp, $e) = $sth->fetchrow();
+    my ($n, $t, $d, $iv, $av, $q, $pc, $dq, $sp, $e) = $sth->fetchrow();
 
     $sth->finish;
     $dbh->commit;
@@ -55,7 +61,8 @@ sub show {
     $self->stash(probe => { name => $n,
 			    type => $t,
 			    desc => $d,
-			    version => $v,
+			    min_version => $iv,
+			    max_version => $av,
 			    query => $q,
 			    preload => $pc,
 			    ddlq => $dq,
@@ -112,8 +119,8 @@ sub add {
             $self->msg->error("Empty target table DDL query");
             $e = 1;
         }
-	if ($form_data->{probe_version} eq '') {
-            $self->msg->error("Empty target version");
+	if ($form_data->{probe_min_version} eq '') {
+            $self->msg->error("Empty minimum version");
             $e = 1;
         }
 	if ($form_data->{source_path} eq '') {
@@ -123,18 +130,20 @@ sub add {
 
         unless ($e) {
             my $rb = 0;
-	    $sth = $dbh->prepare(qq{INSERT INTO probes (probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id});
+	    $sth = $dbh->prepare(qq{INSERT INTO probes (probe_name, probe_type, description, min_version, max_version, command, preload_command, target_ddl_query, source_path, enabled, id_owner)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id});
 
 	    $rb = 1 unless defined $sth->execute($form_data->{probe_name},
 						 $form_data->{probe_type},
 						 $form_data->{probe_desc},
-						 $form_data->{probe_version},
+						 $form_data->{probe_min_version},
+						 $form_data->{probe_max_version} ||= undef,
 						 $form_data->{probe_query},
 						 $form_data->{preload},
 						 $form_data->{ddl_query},
 						 $form_data->{source_path},
-						 $form_data->{enable} ||= 0);
+						 $form_data->{enable} ||= 0,
+						 $self->session('user_id'));
 
 	    my ($id) = $sth->fetchrow();
 	    $sth->finish;
@@ -148,10 +157,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id});
 	    $dbh->disconnect;
 
 	    # redirect
-	    my $origin = $self->session->{origin} ||= 'probes_show';
-            delete $self->session->{origin};
+	    #my $origin = $self->session->{origin} ||= 'probes_show';
+            #delete $self->session->{origin};
 	    # XXX parameters in session
-            return $self->redirect_to($origin, id => $id);
+            return $self->redirect_to('probes_show', id => $id);
 
 	}
     }
@@ -216,8 +225,8 @@ sub edit {
             $self->msg->error("Empty target table DDL query");
             $e = 1;
         }
-	if ($form_data->{probe_version} eq '') {
-            $self->msg->error("Empty target version");
+	if ($form_data->{probe_min_version} eq '') {
+            $self->msg->error("Empty minimum version");
             $e = 1;
         }
 	if ($form_data->{source_path} eq '') {
@@ -227,11 +236,15 @@ sub edit {
 
         unless ($e) {
             my $rb = 0;
-	    $sth = $dbh->prepare(qq{UPDATE probes SET probe_name = ?, probe_type= ?, description = ?, version = ?, command = ?, preload_command = ?, target_ddl_query = ?, source_path = ?, enabled = ? WHERE id = ?});
+	    $sth = $dbh->prepare(qq{UPDATE probes SET probe_name = ?, probe_type= ?, description = ?,
+  min_version = ?, max_version = ?, command = ?, preload_command = ?,
+  target_ddl_query = ?, source_path = ?, enabled = ?
+WHERE id = ?});
 	    $rb = 1 unless defined $sth->execute($form_data->{probe_name},
 						 $form_data->{probe_type},
 						 $form_data->{probe_desc},
-						 $form_data->{probe_version},
+						 $form_data->{probe_min_version},
+						 $form_data->{probe_max_version} ||= undef,
 						 $form_data->{probe_query},
 						 $form_data->{preload},
 						 $form_data->{ddl_query},
@@ -259,10 +272,10 @@ sub edit {
 
     # Get probe info
     $dbh = $self->database;
-    $sth = $dbh->prepare(qq{SELECT probe_name, probe_type, description, version, command, preload_command, target_ddl_query, source_path, enabled FROM probes WHERE id = ?});
+    $sth = $dbh->prepare(qq{SELECT probe_name, probe_type, description, min_version, max_version, command, preload_command, target_ddl_query, source_path, enabled FROM probes WHERE id = ?});
     $sth->execute($id);
 
-    my ($n, $t, $d, $v, $q, $pc, $dq, $sp, $en) = $sth->fetchrow();
+    my ($n, $t, $d, $iv, $av, $q, $pc, $dq, $sp, $en) = $sth->fetchrow();
 
     $sth->finish;
 
@@ -287,7 +300,7 @@ sub edit {
 
     $self->stash(types => $types);
 
-    # use controller params to preselected the checkbox only if not
+    # use controller params to preselect the checkbox only if not
     # already modifed (eg there was an error in the form)
     $self->param('enable', 'on') if ($en && !$e);
 
@@ -297,7 +310,8 @@ sub edit {
     $self->stash(probe => { name => $n,
 			    type => $t,
 			    desc => $d,
-			    version => $v,
+			    min_version => $iv,
+			    max_version => $av,
 			    query => $q,
 			    preload => $pc,
 			    ddlq => $dq,
@@ -307,80 +321,108 @@ sub edit {
     $self->render();
 }
 
-sub script {
+
+sub remove {
     my $self = shift;
 
-    my $e = 0;
-    my $method = $self->req->method;
+    my $id = $self->param('id');
+
+    my  $method = $self->req->method;
     if ($method =~ m/^POST$/i) {
-        # process the input data
-        my $form_data = $self->req->params->to_hash;
+	# process the input data
+	my $form_data = $self->req->params->to_hash;
 
-	# Error processing
-	unless (defined $form_data->{selection}) {
-	    $self->msg->error("Nothing selected");
-	    $e = 1;
-	}
-
-	unless ($e) {
-	    my %ids;
-
-	    if (ref $form_data->{selection} eq '') {
-		$ids{$form_data->{selection}} = 1;
-	    } else {
-		%ids = map { $_ => 1 } @{$form_data->{selection}};
-	    }
+	# Redirect if cancel button has been pressed
+	if (exists $form_data->{remove}) {
 
 	    my $dbh = $self->database;
-	    my $sth = $dbh->prepare(qq{SELECT p.probe_name, t.runner_key, p.command, p.source_path
-FROM probes p JOIN probe_types t ON (p.probe_type = t.id)
-WHERE p.enabled = true AND p.id = ?});
-	    my $commands = { };
-	    foreach my $id (keys %ids) {
-		$sth->execute($id);
-		my ($n, $t, $c, $p) = $sth->fetchrow();
-		$commands->{$t} = [ ] unless exists $commands->{$t};
-		push @{$commands->{$t}}, { id => $id,
-					   probe => $n,
-					   command => $c,
-					   output => $p } if defined $n;
-	    }
+	    my $rb = 0;
+
+	    # Remove graphs links
+	    my $sth = $dbh->prepare(qq{DELETE FROM probe_graphs WHERE id_probe = ?});
+	    $rb = 1 unless defined $sth->execute($id);
 	    $sth->finish;
-	    $dbh->commit;
+
+	    # Remove results links
+	    $sth = $dbh->prepare(qq{DELETE FROM probes_in_sets WHERE id_probe = ?});
+	    $rb = 1 unless defined $sth->execute($id);
+	    $sth->finish;
+
+	    # Remove scripts links
+	    $sth = $dbh->prepare(qq{DELETE FROM script_probes WHERE id_probe = ?});
+	    $rb = 1 unless defined $sth->execute($id);
+	    $sth->finish;
+
+	    # Remove the probe
+	    $sth = $dbh->prepare(qq{DELETE FROM probes WHERE id = ?});
+	    $rb = 1 unless defined $sth->execute($id);
+	    $sth->finish;
+
+	    if ($rb) {
+		$self->msg->error("Could not remove the probe");
+		$dbh->rollback;
+	    } else {
+		$self->msg->info("Probe successfully removed");
+		$dbh->commit;
+	    }
 	    $dbh->disconnect;
-
-	    $Data::Dumper::Varname = "VAR";
-	    $Data::Dumper::Purity = 1;
-	    $self->stash(commands => Dumper($commands));
-
-	    # Make the browser save the file with a proper filename
-	    $self->tx->res->headers->header('Content-Disposition' => 'attachment; filename=probe_runner.pl');
-
-	    return $self->render(template => 'script/probe_runner', format => 'pl');
+	    return $self->redirect_to('probes_list');
+	} else {
+	    return $self->redirect_to('probes_show', id => $id);
 	}
     }
 
     my $dbh = $self->database;
-    # get the list of enabled probes
-    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, t.probe_type, p.description, p.version
+
+    # get the probe
+    my $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, p.description, t.probe_type,
+  p.min_version, p.max_version, p.command, p.preload_command, p.target_ddl_query,
+  p.source_path, p.enabled,
+  string_agg(DISTINCT r.set_name, ', ' ORDER BY r.set_name),
+  string_agg(DISTINCT g.graph_name, ', ' ORDER BY g.graph_name),
+  string_agg(DISTINCT s.script_name, ', ' ORDER BY s.script_name),
+  u.username
 FROM probes p
-JOIN probe_types t ON (p.probe_type = t.id)
-WHERE enabled = true ORDER BY 3, 2});
-    $sth->execute;
-    my $probes = [ ];
-    while (my ($i, $n, $t, $d, $v) = $sth->fetchrow()) {
-	push @{$probes}, { id => $i,
-			   name => $n,
-			   type => $t,
-			   desc => $d,
-			   version => $v
-			 };
-    }
+  JOIN probe_types t ON (t.id = p.probe_type)
+  JOIN users u ON (p.id_owner = u.id)
+  LEFT JOIN probes_in_sets pis ON (pis.id_probe = p.id)
+  LEFT JOIN results r ON (r.id = pis.id_result)
+  LEFT JOIN probe_graphs pg ON (pg.id_probe = p.id)
+  LEFT JOIN graphs g ON (g.id = pg.id_graph)
+  LEFT JOIN script_probes sp ON (sp.id_probe = p.id)
+  LEFT JOIN scripts s ON (sp.id_script = s.id)
+WHERE p.id = ?
+GROUP BY p.id, p.probe_name, p.description, t.probe_type, u.username});
+    $sth->execute($id);
+
+    my ($i, $n, $d, $t, $iv, $av, $q, $pc, $dq, $sp, $e, $r, $g, $s, $o) = $sth->fetchrow;
     $sth->finish;
+
+    # check if the probe exists
+    if (! defined $i) {
+	$dbh->commit;
+	$dbh->disconnect;
+	return $self->render_not_found;
+    }
+
+    $self->stash(probe => { name => $n,
+			    desc => $d,
+			    type => $t,
+			    min_version => $iv,
+			    max_version => $av,
+			    query => $q,
+			    preload => $pc,
+			    ddlq => $dq,
+			    path => $sp,
+			    enabled => $e,
+			    results => $r,
+			    graphs => $g,
+			    scripts => $s,
+			    owner => $o
+			  });
+
     $dbh->commit;
     $dbh->disconnect;
-
-    $self->stash(probes => $probes);
 
     $self->render;
 }

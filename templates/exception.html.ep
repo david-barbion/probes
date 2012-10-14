@@ -1,8 +1,8 @@
 % layout 'default';
-<div class="block">
+<div class="page-header">
   <h2>Server Error</h2>
-
-  <div class="block_body">
-    <p>Please continue to the <%= link_to 'home' => begin %>home page<% end %>.</p>
-  </div>
 </div>
+
+<p>Please continue to the <%= link_to 'site_home' => begin %>home page<% end %>.</p>
+
+

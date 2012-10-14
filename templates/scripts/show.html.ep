@@ -1,0 +1,48 @@
+% layout 'default';
+% my %s = %{stash 'script'};
+% my @probes = @{stash 'probes'};
+<h2><%= $s{name} %></h2>
+
+<div class="btn-group pull-right">
+  <%= link_to scripts_list => (class => "btn") => begin %>Back to list<% end %>
+  <%= link_to scripts_add => (class => "btn") => begin %>New script<% end %>
+  <%= link_to scripts_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>
+  <%= link_to scripts_remove => { id => $id } => (class => "btn") => begin %>Delete<% end %>
+</div>
+
+<div style="clear: both;"></div>
+
+<div id="scripts" style="margin-top: 30px;">
+  <h3>Script information</h3>
+  <dl>
+    <dt>Name:</dt><dd><%= $s{name} %></dd>
+    <dt>Description:</dt><dd><%= $s{desc} %></dd>
+  </dl>
+
+  <h3>Included probes</h3>
+% if (scalar(@probes)) {
+    <table class="table table-condensed table-striped">
+      <tr>
+	<th>Probe</th>
+	<th>Description</th>
+	<th>Min. version</th>
+	<th>Max. version</th>
+	<th>Type</th>
+      </tr>
+%     foreach my $probe (@probes) {
+%         my %p = %{$probe};
+      <tr>
+	<td><%= link_to probes_show => { id => $p{id} } => begin %><%= $p{name} %><% end %></td>
+	<td><%= $p{desc} %></td>
+	<td><%= $p{min_vers} %></td>
+	<td><%= $p{max_vers} %></td>
+	<td><%= $p{type} %></td>
+      </tr>
+%     }
+    </table>
+% } else {
+    <p>No probe found fo this script</p>
+% }
+
+</div>
+

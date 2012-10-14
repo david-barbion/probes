@@ -1,0 +1,41 @@
+% layout 'default';
+% my @reports = @{stash 'reports'};
+<h2>Available reports</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to reports_add => (class => "btn") => begin %>New report<% end %>
+</div>
+
+<div style="clear: both;"></div>
+
+<div id="probes" style="margin-top: 30px;">
+  <% if (scalar(@reports)) { %>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Report</th>
+      <th>Description</th>
+      <th>Probes results</th>
+      <th>Graphs</th>
+      <th>Owner</th>
+      <th>&nbsp;</th>
+    </tr>
+    <% foreach my $r (@reports) { %>
+    <%     my %line = %{$r}; %>
+    <tr>
+      <td><%= link_to reports_show => { id => $line{id} } => begin %><%= $line{name} %><% end %></td>
+      <td><%= $line{desc} %></td>
+      <td><%= $line{results} %></td>
+      <td><%= $line{graphs} %></td>
+      <td><%= $line{owner} %></td>
+      <td>
+	<%= link_to reports_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %>
+	<%= link_to reports_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %>
+      </td>
+
+    </tr>
+    <% } %>
+  </table>
+  <% } else { %>
+  <p>No report found</p>
+  <% } %>
+</div>

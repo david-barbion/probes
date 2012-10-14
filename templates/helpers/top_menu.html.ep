@@ -1,0 +1,16 @@
+<ul class="nav">
+% if ($user_level eq "guest" ) {
+  <li><%= link_to site_home => begin %>Home<% end %></li>
+% } elsif ($user_level eq "user" ) {
+  <li><%= link_to site_home => begin %>Home<% end %></li>
+  <li><%= link_to site_help => begin %>Help<% end %></li>
+% } elsif ($user_level eq "admin") {
+  <li><%= link_to site_home => begin %>Home<% end %></li>
+  <li><%= link_to probes_list => begin %>Probes<% end %></li>
+  <li><%= link_to scripts_list => begin %>Scripts<% end %></li>
+  <li><%= link_to results_list => begin %>Results<% end %></li>
+  <li><%= link_to reports_list => begin %>Reports<% end %></li>
+  <li><%= link_to graphs_list => begin %>Graphs<% end %></li>
+  <li><%= link_to site_help => begin %>Help<% end %></li>
+% }
+</ul>

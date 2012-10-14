@@ -1,52 +1,41 @@
 % layout 'default';
 % my @probes = @{stash 'probes'};
-<div class="block">
-  <h2>Available probes</h2>
+<h2>Available probes</h2>
 
-  <div id="page_nav" class="block_head">
-    <ul class="submenu">
-      <li><%= link_to probes_add => (class => "link") => begin %>Add a new probe<% end %></li>
-      <li><%= link_to probes_script => (class => "link") => begin %>Generate script<% end %></li>
-    </ul>
-  </div>
+<div class="btn-group pull-right">
+  <%= link_to probes_add => (class => "btn") => begin %>Add a new probe<% end %>
+</div>
 
-  <div id="probes" class="block_body">
-    <% if (scalar(@probes)) { %>
-    <table class="block_table">
-      <tr>
-	<th>Probe</th>
-	<th>Description</th>
-	<th>Minimum version</th>
-	<th>Type</th>
-	<th>&nbsp;</th>
-	<th>&nbsp;</th>
-      </tr>
-      <% foreach my $p (@probes) { %>
-      <%     my %line = %{$p}; %>
-      <tr>
-	<td>
-	  <%= link_to probes_show => { id => $line{id} } => begin %><%= $line{probe_name} %><% end %>
-	</td>
-	<td>
-	  <%= $line{description} %>
-	</td>
-	<td>
-	  <%= $line{version} %>
-	</td>
-	<td>
-	  <%= $line{type} %>
-	</td>
-	<td>
-	  <%= link_to probes_edit => { id => $line{id} } => begin %>Edit<% end %>
-	</td>
-	<td>
-	  <% unless ($line{enabled}) { %>Disabled<% } else { %>&nbsp;<% } %>
-	</td>
-      </tr>
-      <% } %>
-    </table>
-    <% } else { %>
-    <p>No probes found</p>
+<div style="clear: both;"></div>
+
+<div id="probes" style="margin-top: 30px;">
+  <% if (scalar(@probes)) { %>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Probe</th>
+      <th>Description</th>
+      <th>Minimum version</th>
+      <th>Maximum version</th>
+      <th>Type</th>
+      <th>Owner</th>
+      <th>&nbsp;</th>
+      <th>&nbsp;</th>
+    </tr>
+    <% foreach my $p (@probes) { %>
+    <%     my %line = %{$p}; %>
+    <tr>
+      <td><%= link_to probes_show => { id => $line{id} } => begin %><%= $line{probe_name} %><% end %></td>
+      <td><%= $line{description} %></td>
+      <td><%= $line{min_version} %></td>
+      <td><%= $line{max_version} %></td>
+      <td><%= $line{type} %></td>
+      <td><%= $line{owner} %></td>
+      <td><%= link_to probes_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %></td>
+      <td><% unless ($line{enabled}) { %>Disabled<% } else { %>&nbsp;<% } %></td>
+    </tr>
     <% } %>
-  </div>
+  </table>
+  <% } else { %>
+  <p>No probe found</p>
+  <% } %>
 </div>

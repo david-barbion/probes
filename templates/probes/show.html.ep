@@ -1,34 +1,34 @@
 % layout 'default';
 % my %p = %{stash 'probe'};
-<div class="block">
-  <h2><%= $p{name} %></h2>
+<h2><%= $p{name} %></h2>
 
-  <div id="page_nav" class="block_head">
-    <ul class="submenu">
-      <li><%= link_to probes_list => (class => "link") => begin %>Back to list<% end %></li>
-      <li><%= link_to probes_add => (class => "link") => begin %>New probe<% end %></li>
-      <li><%= link_to probes_edit => { id => $id } => (class => "link") => begin %>Edit<% end %></li>
-      <li><%= link_to probes_remove => { id => $id } => (class => "link") => begin %>Delete<% end %></li>
-    </ul>
-  </div>
-
-  <div id="probe" class="block_body">
-    <ul>
-      <li><span class="bold">Name:</span> <%= $p{name} %></li>
-      <li><span class="bold">Type:</span> <%= $p{type} %></li>
-      <li><span class="bold">Description:</span> <%= $p{desc} %></li>
-      <li><span class="bold">Minimum version:</span> <%= $p{version} %></li>
-      <li><span class="bold">Probe query/command:</span>
-	<% if (defined $p{query}) { %>
-	<pre><%= $p{query} %></pre>
-	<% } %></li>
-      <li><span class="bold">Preload command:</span>
-	<% if (defined $p{preload}) { %>
-	<pre><%= $p{preload} %></pre>
-	<% } %></li>
-      <li><span class="bold">Target table:</span> <pre><%= $p{ddlq} %></pre></li>
-      <li><span class="bold">Path in archive:</span> <%= $p{path} %></li>
-      <li><span class="bold">Enabled:</span> <% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></li>
-    </ul>
-  </div>
+<div class="btn-group pull-right">
+  <%= link_to probes_list => (class => "btn") => begin %>Back to list<% end %>
+  <%= link_to probes_add => (class => "btn") => begin %>New probe<% end %>
+  <%= link_to probes_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>
+  <%= link_to probes_remove => { id => $id } => (class => "btn") => begin %>Delete<% end %>
 </div>
+
+<div style="clear: both;"></div>
+
+<div id="probes" style="margin-top: 30px;">
+  <dl>
+    <dt>Name:</dt><dd><%= $p{name} %></dd>
+    <dt>Type:</dt><dd><%= $p{type} %></dd>
+    <dt>Description:</dt><dd><%= $p{desc} %></dd>
+    <dt>Minimum version:</dt><dd><%= $p{min_version} %></dd>
+    <dt>Maximum version:</dt><dd><%= $p{max_version} %></dd>
+    <dt>Probe query/command:</dt><dd>
+      <% if ($p{query}) { %>
+      <pre><%= $p{query} %></pre>
+      <% } else { %>None<% } %></dd>
+    <dt>Preload command:</dt><dd>
+      <% if ($p{preload}) { %>
+      <pre><%= $p{preload} %></pre>
+      <% } else { %>None<% } %></dd>
+    <dt>Target table:</dt><dd><pre><%= $p{ddlq} %></pre></dd>
+    <dt>Path in archive:</dt><dd><%= $p{path} %></dd>
+    <dt>Enabled:</dt><dd><% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></dd>
+  </dl>
+</div>
+

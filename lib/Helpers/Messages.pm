@@ -49,7 +49,9 @@ sub debug {
     my $self = shift;
 
     my $messages = $self->msg_lists;
-    push $messages->{debug}, @_;
+    my @debug = @{$messages->{debug}};
+    push @debug, @_;
+    $messages->{debug} = \@debug;
     $self->msg_lists($messages);
     return;
 }
@@ -58,7 +60,9 @@ sub info {
     my $self = shift;
 
     my $messages = $self->msg_lists;
-    push $messages->{info}, @_;
+    my @info = @{$messages->{info}};
+    push @info, @_;
+    $messages->{info} = \@info;
     $self->msg_lists($messages);
     return;
 }
@@ -67,7 +71,9 @@ sub error {
     my $self = shift;
 
     my $messages = $self->msg_lists;
-    push $messages->{error}, @_;
+    my @error = @{$messages->{error}};
+    push @error, @_;
+    $messages->{error} = \@error;
     $self->msg_lists($messages);
     return;
 }

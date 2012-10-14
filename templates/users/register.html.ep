@@ -1,0 +1,57 @@
+% layout 'default';
+
+<h2>Register</h2>
+
+<div id="form" class="span8">
+  <%= form_for users_register => (method => 'POST', class => 'form-horizontal') => begin %>
+  <fieldset>
+    <legend></legend>
+
+    <div class="control-group">
+      <label class="control-label strong" for="username">Username:</label>
+      <div class="controls">
+	<%= text_field 'username', type => 'text', class => 'span6', id => 'username' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="password">Password:</label>
+      <div class="controls">
+	<%= text_field 'password', type => 'password', class => 'span6', id => 'password' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="confirm_password">Confirm Password:</label>
+      <div class="controls">
+	<%= text_field 'confirm_password', type => 'password', class => 'span6', id => 'confirm_password' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="first_name">First name:</label>
+      <div class="controls">
+	<%= text_field 'first_name', type => 'text', class => 'span6', id => 'first_name' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="last_name">Last name:</label>
+      <div class="controls">
+	<%= text_field 'last_name', type => 'text', class => 'span6', id => 'last_name' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="email">E-mail:</label>
+      <div class="controls">
+	<%= text_field 'email', type => 'text', class => 'span6', id => 'email' %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= submit_button 'Register', name => 'register', class => 'btn btn-primary' %>
+    </div>
+  </fieldset>
+  <% end %>
+</div>

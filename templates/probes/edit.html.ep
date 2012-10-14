@@ -1,64 +1,98 @@
 % layout 'default';
 % my %p = %{stash 'probe'};
-<div class="block">
-  <h2>Edit a probe</h2>
+<h2>Edit a probe</h2>
 
-  <div id="page_nav" class="block_head">
-    <ul class="submenu">
-      <li><%= link_to probes_list => (class => "link") => begin %>Back to list<% end %></li>
-      <li><%= link_to probes_add => (class => "link") => begin %>New probe<% end %></li>
-    </ul>
-  </div>
+<div class="btn-group pull-right">
+  <%= link_to probes_list => (class => "btn") => begin %>Back to list<% end %>
+  <%= link_to probes_add => (class => "btn") => begin %>New probe<% end %>
 </div>
 
-<div id="form" class="block">
-  <%= form_for probes_edit => (method => 'POST', class => 'cmxform') => begin %>
+<div style="clear:both;margin-top:30px;"></div>
+
+<div id="form" class="span8">
+  <%= form_for probes_edit => (method => 'POST', class => 'form-horizontal') => begin %>
 
   <fieldset>
-    <legend>Probe definition</legend>
-    <ol>
-      <li>
-	<label for="name">Probe name:</label>
-	<%= text_field probe_name => $p{name}, size => 72, id => 'name' %>
-      </li>
-      <li>
-	<label for="type">Probe type:</label>
-	<%= select_field probe_type => $types %>
-      </li>
-      <li>
-	<label for="desc">Description:</label>
-	<%= text_area probe_desc => (rows => 3, cols => 70, id => 'desc') => begin %><% if (defined $p{desc}) { %><%== $p{desc} %><% } %><% end %>
-      </li>
-      <li>
-	<label for="version">Version:</label>
-	<%= text_field probe_version => $p{version}, size => 5, id => 'version' %>
-      </li>
-      <li>
-	<label for="query">Query:</label>
-	<%= text_area probe_query => (rows => 5, cols => 70, id => 'query') => begin %><% if (defined $p{query}) { %><%== $p{query} %><% } %><% end %>
-      </li>
-      <li>
-	<label for="preload">Preload command, to transform the data into CSV:</label>
-	<%= text_area preload => (rows => 5, cols => 70, id => 'preload') => begin %><% if (defined $p{preload}) { %><%== $p{preload} %><% } %><% end %>
-      </li>
-      <li>
-	<label for="ddl">Target table:</label>
-	<%= text_area ddl_query => (rows => 5, cols => 70, id => 'ddl') => begin %><%== $p{ddlq} %><% end %>
-      </li>
-      <li>
-	<label for="path">Path in archive:</label>
-	<%= text_field 'source_path' => $p{path}, size => 72, id => 'path' %>
-      </li>
-      <li>
-	<label for="enable">Enable: </label>
-	<%= check_box enable => 'on', id => 'enable' %>
-      </li>
-    </ol>
-  </fieldset>
+   <legend>Probe definition</legend>
 
-  <div class="submit">
-    <%= submit_button 'Save', name => 'save' %>
-    <%= submit_button 'Cancel', name => 'cancel' %>
-  </div>
+    <div class="control-group">
+      <label class="control-label strong" for="name">Probe name:</label>
+      <div class="controls">
+	<%= text_field probe_name => $p{name}, type => 'text', class => 'span6', id => 'name' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="type">Probe type:</label>
+      <div class="controls">
+	<%= select_field probe_type => $types %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="desc">Description:</label>
+      <div class="controls">
+	<%= text_area probe_desc => (rows => 3, id => 'desc', class => 'span6') => begin %><% if (defined $p{desc}) { %><%== $p{desc} %><% } %><% end %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="min_version">Minimum version:</label>
+      <div class="controls">
+	<%= text_field probe_min_version => $p{min_version}, type => 'text', id => 'min_version', class => 'span1' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="max_version">Maximum version:</label>
+      <div class="controls">
+	<%= text_field probe_max_version => $p{max_version}, type => 'text', id => 'max_version', class => 'span1' %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="query">Query/Command:</label>
+      <div class="controls">
+	<%= text_area probe_query => (rows => 5, id => 'query', class => 'span6') => begin %><% if (defined $p{query}) { %><%== $p{query} %><% } %><% end %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="preload">Preload command:</label>
+      <div class="controls">
+	<%= text_area preload => (rows => 5, id => 'preload', class => 'span6') => begin %><% if (defined $p{preload}) { %><%== $p{preload} %><% } %><% end %>
+	<p class="help-block">Specify the command to transform the into CSV suitable for COPY.
+	  The placeholder %f can be used to specify the input file name in the command</p>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="ddl">Target table:</label>
+      <div class="controls">
+	<%= text_area ddl_query => (rows => 5, id => 'ddl', class => 'span6') => begin %><%== $p{ddlq} %><% end %>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="path">Path in archive:</label>
+      <div class="controls">
+	<%= text_field 'source_path' => $p{path}, type => 'text', id => 'path', class => 'span6' %>
+	<p class="help-block">Paths must have a .csv suffix</p>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label strong" for="enable">Enable: </label>
+      <div class="controls">
+	<%= check_box enable => 'on', id => 'enable' %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+
+  </fieldset>
   <% end %>
 </div>

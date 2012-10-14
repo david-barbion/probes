@@ -1,38 +1,102 @@
 % layout 'default';
 % my @sets = @{stash 'sets'};
-<div class="block">
-  <h2>Available probe results</h2>
+<ul id="steptabs" class="nav nav-tabs">
+  <li class="active"><a href="#reports" data-toggle="tab"><strong>Reports</strong></a></li>
+  <li><a href="#scripts" data-toggle="tab"><strong>Scripts</strong></a></li>
+  <li><a href="#upload" data-toggle="tab"><strong>Upload</strong></a></li>
+</ul>
 
-  <div id="sets" class="block_body">
-    <% if (scalar(@sets)) { %>
-    <table class="block_table">
-      <tr>
-	<th>Name</th>
-	<th>Description</th>
-	<th>&nbsp;</th>
-      </tr>
-      <% foreach my $p (@sets) { %>
-      <%     my %line = %{$p}; %>
-      <tr>
-	<td><%= link_to draw_list => { nsp => $line{schema} } => begin %><%= $line{set} %><% end %></td>
-	<td><%= $line{desc} %></td>
-	<td><%= link_to remove => { id => $line{id} } => begin %>Delete<% end %></td>
-      </tr>
-      <% } %>
+<div id="steptabscontents" class="tab-content">
+  <div class="tab-pane active" id="reports">
+    <div class="page-header">
+      <h1>Reports <small>linking to graphs</small></h1>
+    </div>
+
+    <table class="table table-striped">
+      <thead>
+	<tr>
+	  <th>Name</th><th>Description</th><th>&nbsp;</th>
+	</tr>
+      </thead>
+      <tbody>
+	<% foreach my $p (@sets) { %>
+	<%     my %line = %{$p}; %>
+	<tr>
+	  <td><%= link_to draw_list => { nsp => 'data_'.$line{id} } => begin %><%= $line{set} %><% end %></td>
+	  <td><%= $line{desc} %></td>
+	  <td><%= link_to remove => { id => $line{id} } => begin %>remove<% end %></td>
+	</tr>
+	<% } %>
+      </tbody>
     </table>
-    <% } else { %>
-    <p>No results found</p>
-    <% } %>
   </div>
-</div>
 
-<div class="block">
-  <h2>Upload an archive</h2>
+  <div id="scripts" class="tab-pane">
+    <div class="page-header">
+      <h1>Scripts <small>to gather data on your server</small></h1>
+    </div>
+    
+    <button class="btn">PostgreSQL Only</button>
+    <button class="btn">PostgreSQL and Sysstat</button>
+  </div>
 
-  <div id="upload" class="block_body">
-    <%= form_for upload => (enctype => 'multipart/form-data', method => 'POST') => begin %>
-    <%= file_field 'tarball' %>
-    <%= submit_button 'Upload' %>
+  <div id="upload" class="tab-pane">
+    <div class="page-header">
+      <h1>Upload <small>the results</small></h1>
+    </div>
+
+    <%= form_for results_upload => (enctype => 'multipart/form-data', method => 'POST', id => 'fileupload', class => 'form-horizontal') => begin %>
+      <fieldset>
+        <div class="control-group">
+	  <label class="control-label" for="input01">Custom name</label>
+	  <div class="controls">
+	    <input type="text" class="input-xxlarge" name="name">
+	    <p class="help-block">Override the name of the probe run found in the archive.</p>
+	  </div>
+        </div>
+
+	<div class="control-group">
+	  <label class="control-label" for="textarea">Custom description</label>
+	  <div class="controls">
+	    <textarea class="input-xxlarge" rows="3" name="desc"></textarea>
+	    <p class="help-block">Override the description of the probe run found in the archive.</p>
+	  </div>
+        </div>
+	
+	<div class="control-group">
+	  <label class="control-label" for="fileInput">Archive</label>
+	  <div class="controls">
+	    <input class="input-file input-xxlarge" id="fileInput" type="file" name="tarball">
+	    <p class="help-block">Choose the archive file to upload</p>
+	  </div>
+        </div>
+
+      </fieldset>
+      
+      <div class="form-actions">
+	<button type="submit" class="btn btn-primary">Upload</button>
+      </div>
     <% end %>
+
+    <div id="upload-status">
+
+      <div class="status"></div>
+
+      <dl class="dl-horizontal">
+	<dt>Name</dt><dd></dd>
+	<dt>Description</dt><dd></dd>
+	<dt>Progress</dt><dd><div class="progress"><div class="bar"></div></div>
+      </dl>
+
+      <div class="after form-actions">
+	<a href="<%= url_for '/' %>" class="btn btn-primary">Continue</a>
+	<button type="button" class="btn reset">Upload another file</button>
+      </div>
+    </div>
   </div>
 </div>
+
+<script type="text/javascript" src="<%= url_for '/' %>js/jquery.form.js"></script>
+<script type="text/javascript" src="<%= url_for '/' %>js/upload.js"></script>
+
+

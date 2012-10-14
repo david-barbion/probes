@@ -1,0 +1,54 @@
+% layout 'default';
+% my %s = %{stash 'script'};
+% my @pl = @{stash 'probes'};
+<h2>Remove script</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to scripts_show => { id => $id } => (class => "btn") => begin %>Back to details<% end %>  
+  <%= link_to scripts_list => (class => "btn") => begin %>Back to list<% end %>
+</div>
+
+<div style="clear: both;"></div>
+
+<div style="margin-top: 30px;">
+  <p><strong>Are you sure you want to remove this script?</strong></p>
+
+  <%= form_for scripts_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
+  <fieldset>
+    <div class="control-group">
+      <label class="control-label">Name</label>
+      <div class="controls"><p><%= $s{name} %></p></div>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Description</label>
+      <div class="controls"><p><%= $s{desc} %></p></div>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Probes</label>
+      <div class="controls">
+	<table class="table table-condensed table-striped">
+	  <tr>
+	    <th>Probe</th>
+	    <th>Min. Version</th>
+	    <th>Max. Version</th>
+	    <th>Type</th>
+	  </tr>
+% foreach my $i (@pl) {
+%     my %p = %{$i};
+	  <tr>
+	    <td><%= link_to probes_show => { id => $p{id} } => (title => $p{desc}) => begin %><%= $p{name} %><% end %></td>
+	    <td><%= $p{min_vers} %></td>
+	    <td><%= $p{max_vers} %></td>
+	    <td><%= $p{type} %></td>
+	  </tr>
+% }
+	</table>
+      </div>
+    </div>
+  </fieldset>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary" name="remove">Remove</button>
+    <button type="submit" class="btn" name="cancel">Cancel</button>
+  </div>
+  <% end %>
+</div>

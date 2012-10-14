@@ -1,0 +1,126 @@
+% layout 'default';
+<h2>Edit a graph</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to graphs_list => (class => "btn") => begin %>Back to list<% end %>
+  <%= link_to graphs_add => (class => "btn") => begin %>New graph<% end %>
+  <%= link_to graphs_remove => (class => "btn") => begin %>Remove<% end %>
+</div>
+
+<div style="clear:both;margin-top:30px;"></div>
+
+<div id="form" class="span8">
+  <%= form_for graphs_edit => (method => 'POST', class => 'form-horizontal') => begin %>
+  <div id="graph_controls">
+    <fieldset>
+      <legend>Graph details</legend>
+
+      <div class="control-group">
+	<label class="control-label strong" for="name">Graph name:</label>
+	<div class="controls">
+	  <%= text_field 'graph_name', type => 'text', class => 'span6', id => 'name' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="desc">Description:</label>
+	<div class="controls">
+	  <%= text_area graph_desc => (rows => 3, id => 'desc', class => 'span6') => begin %><% end %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label strong" for="query">Query:</label>
+	<div class="controls">
+	  <%= text_area query => (rows => 7, id => 'query', class => 'span6 code-font') => begin %><% end %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="filter_query">Filter query:</label>
+	<div class="controls">
+	  <%= text_area filter_query => (rows => 7, id => 'filter_query', class => 'span6 code-font') => begin %><% end %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label">Probe:</label>
+	<div class="controls">
+	  <%= select_field probe => $probes %>
+	  <span class="help-block">Link the graph to a probe to make it available in the default report</span>
+	</div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Options</legend>
+
+      <div class="row">
+	<div class="control-group span4">
+	  <label class="control-label">Type:</label>
+	  <div class="controls">
+	    <label class="radio"><%= radio_button 'graph-type' => 'lines', id => 'graph-line' %> Lines</label>
+	    <label class="radio"><%= radio_button 'graph-type' => 'points', id => 'graph-points' %> Points</label>
+	    <label class="radio"><%= radio_button 'graph-type' => 'pie', id => 'graph-pie' %> Pie</label>
+	  </div>
+	</div>
+
+	<div class="control-group span4">
+	  <label class="control-label">Display:</label>
+	  <div class="controls">
+	    <label class="checkbox"><%= check_box stacked => 'on', id => 'stacked' %> Stacked?</label>
+	    <label class="checkbox"><%= check_box filled => 'on', id => 'filled' %> Filled?</label>
+	    <label class="checkbox"><%= check_box 'show-legend' => 'on', id => 'show-legend' %> Show legend in graph?</label>
+	  </div>
+	</div>
+      </div>
+
+      <div class="row">
+	<div class="control-group span4">
+	  <label class="control-label" for="series-width">Series width:</label>
+	  <div class="controls">
+	    <%= text_field 'series-width', type => 'text', id => 'series-width', class => 'span1' %>
+	  </div>
+	</div>
+
+	<div class="control-group span4">
+	  <label class="control-label" for="legend-cols">Legend cols: </label>
+	  <div class="controls">
+	    <%= text_field 'legend-cols', type => 'text', id => 'legend-cols', class => 'span1' %>
+	  </div>
+	</div>
+      </div>
+
+    </fieldset>
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+
+    <fieldset>
+      <legend>Preview</legend>
+
+      <div class="control-group">
+	<label class="control-label" for="preview">Preview on result:</label>
+	<div class="controls">
+	  <%= select_field nsp => $results %>
+	  <input type="button" id="add_graph" class="btn" name="add_graph" value="Graph" />
+	</div>
+      </div>
+    </fieldset>
+  </div>
+
+  <div id="gbox"></div>
+
+  <% end %>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+      $("#gbox").probe({
+          controls: "#graph_controls",
+          drawButton: "#add_graph"
+      });
+  });
+</script>

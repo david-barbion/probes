@@ -1,0 +1,51 @@
+% layout 'default';
+% my @results = @{stash 'results'};
+<h2>Uploaded results</h2>
+
+<div class="btn-group pull-right">
+  <%= link_to results_upload => (class => "btn") => begin %>Upload an archive<% end %>
+</div>
+
+<div style="clear: both;"></div>
+
+<div id="results" style="margin-top: 30px;">
+  <% if (scalar(@results)) { %>
+  <%= form_for results_list => (method => 'POST') => begin %>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th><i class="icon-check" id="chkall"></i></th>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Upload date</th>
+      <th>Owner</th>
+      <th>&nbsp</th>
+    </tr>
+    <% foreach my $r (@results) { %>
+    <%     my %line = %{$r}; %>
+    <tr>
+      <td><%= check_box selection => $line{id} %></td>
+      <td><%= link_to results_show => { id => $line{id} } => begin %><%= $line{set} %><% end %></td>
+      <td><%= $line{desc} %></td>
+      <td><%= $line{upload} %></td>
+      <td><%= $line{owner} %></td>
+      <td><%= link_to results_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %></td>
+    </tr>
+    <% } %>
+  </table>
+  
+  <div class="form-actions">
+    <%= submit_button 'Remove selected', name => 'purge', class => 'btn btn-primary' %>
+  </div>
+  <% end %>
+  <% } else { %>
+  <p>No results found</p>
+  <% } %>
+</div>
+
+<script>
+$("#chkall").click(function() {
+    $("#results").find("input[type=checkbox]").each(function(i) {
+        $(this).prop("checked", !$(this).prop("checked"));
+    });
+});
+</script>

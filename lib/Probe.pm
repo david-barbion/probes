@@ -1,6 +1,5 @@
 package Probe;
 use Mojo::Base 'Mojolicious';
-#use Scalar::Util 'weaken';
 
 # This method will run once at server start
 sub startup {
@@ -25,6 +24,10 @@ sub startup {
     # Load HTML Messaging plugin
     $self->plugin('messages');
 
+    $self->plugin('menu');
+
+    $self->plugin('permissions');
+
     # Documentation browser under "/perldoc" (this plugin requires Perl 5.10)
     $self->plugin('PODRenderer');
 
@@ -41,30 +44,61 @@ sub startup {
 
     # Routes
     my $r = $self->routes;
+    my $ra = $r->bridge->to('users#check');
 
-    # Home page and set management (Probe::Site) + upload
-    $r->route('/')                           ->to('site#home')     ->name('home');
-    $r->route('/upload')      ->via('post')  ->to('site#upload')   ->name('upload');
-    $r->route('/remove/:id', id => qr/\d+/)  ->to('site#remove')   ->name('remove');
+    # Home page
+    $ra->route('/')         ->to('site#home')     ->name('site_home');
+    $ra->route('/help')     ->to('site#help')     ->name('site_help');
+
+    # User stuff
+    $r->route('/login')     ->to('users#login')     ->name('users_login');
+    $ra->route('/logout')   ->to('users#logout')    ->name('users_logout');
+    $r->route('/register')  ->to('users#register')  ->name('users_register');
+    $ra->route('/profile')  ->to('users#profile')   ->name('users_profile');
+
+    # Admin
+    # Users
+    # Permissions
+
+
+    # Results management
+    $ra->route('/results')                           ->to('results#list')   ->name('results_list'); # a table with all results available to the user
+    $ra->route('/results/upload')                    ->to('results#upload') ->name('results_upload');
+    $ra->route('/results/:id', id => qr/\d+/)        ->to('results#show')   ->name('results_show'); # the info on the results + linked reports + linked graphs
+    $ra->route('/results/:id/remove', id => qr/\d+/) ->to('results#remove') ->name('results_remove');
+
+    # Script management
+    $ra->route('/scripts')                           ->to('scripts#list')   ->name('scripts_list');
+    $ra->route('/scripts/add')                       ->to('scripts#add')    ->name('scripts_add');
+    $ra->route('/scripts/:id', id => qr/\d+/)        ->to('scripts#show')   ->name('scripts_show');
+    $ra->route('/scripts/:id/edit', id => qr/\d+/)   ->to('scripts#edit')   ->name('scripts_edit');
+    $ra->route('/scripts/:id/remove', id => qr/\d+/) ->to('scripts#remove') ->name('scripts_remove');
+    $ra->route('/scripts/:id/get', id => qr/\d+/)    ->to('scripts#download')->name('scripts_download');
 
     # Probe management (Probe::Probes)
-    my $rw = $r->waypoint('/probes')         ->to('probes#list')   ->name('probes_list');
-    $rw->route('/add')                       ->to('probes#add')    ->name('probes_add');
-    $rw->route('/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
-    $rw->route('/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
-    # $rw->route('/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
-    $rw->route('/script')                    ->to('probes#script') ->name('probes_script');
+    $ra->route('/probes')                           ->to('probes#list')   ->name('probes_list');
+    $ra->route('/probes/add')                       ->to('probes#add')    ->name('probes_add');
+    $ra->route('/probes/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');
+    $ra->route('/probes/:id/edit', id => qr/\d+/)   ->to('probes#edit')   ->name('probes_edit');
+    $ra->route('/probes/:id/remove', id => qr/\d+/) ->to('probes#remove') ->name('probes_remove');
 
-    # Print and manipulate graphs for a specified set (Probe::Draw)
-    $r->route('/draw/data')   ->via('post')  ->to('draw#data')      ->name('draw_data');
-    my $dw = $r->waypoint('/draw/:nsp')      ->to('draw#list')      ->name('draw_list');
-    $dw->route('/save')       ->via('post')  ->to('draw#save_list') ->name('draw_list_save');
-    $dw->route('/orphans')                   ->to('draw#orphans')   ->name('draw_orphans');
-    $dw->route('/show')                      ->to('draw#show')      ->name('draw_show');
-    $dw->route('/add')                       ->to('draw#add')       ->name('draw_add');
-    $dw->route('/edit/:id', id => qr/\d+/)   ->to('draw#edit')      ->name('draw_edit');
-    $dw->route('/remove/:id', id => qr/\d+/) ->to('draw#remove')    ->name('draw_remove');
+    # Graph management
+    $ra->route('/graphs')                           ->to('graphs#list')   ->name('graphs_list');
+    $ra->route('/graphs/add')                       ->to('graphs#add')    ->name('graphs_add');
+    $ra->route('/graphs/:id', id => qr/\d+/)        ->to('graphs#show')   ->name('graphs_show');
+    $ra->route('/graphs/:id/edit', id => qr/\d+/)   ->to('graphs#edit')   ->name('graphs_edit');
+    $ra->route('/graphs/:id/remove', id => qr/\d+/) ->to('graphs#remove') ->name('graphs_remove');
+    $ra->route('/graphs/data')   ->via('post')      ->to('graphs#data')   ->name('graphs_data');
+
+    # Reports
+    $ra->route('/reports')                           ->to('reports#list')      ->name('reports_list');
+    $ra->route('/reports/add')                       ->to('reports#add')       ->name('reports_add');
+    $ra->route('/reports/:id', id => qr/\d+/)        ->to('reports#show')      ->name('reports_show');
+    $ra->route('/reports/:id/edit', id => qr/\d+/)   ->to('reports#edit')      ->name('reports_edit');
+    $ra->route('/reports/:id/remove', id => qr/\d+/) ->to('reports#remove')    ->name('reports_remove');
 
 }
 
 1;
+
+

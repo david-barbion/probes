@@ -1,0 +1,11 @@
+<div class="btn-group pull-right">
+  <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+    <i class="icon-user"></i> <%= $menu_username %>
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu">
+    <li><%= link_to users_profile => begin %>Profile<% end %></li>
+    <li class="divider"></li>
+    <li><%= link_to users_logout => begin %>Sign Out<% end %></li>
+  </ul>
+</div>

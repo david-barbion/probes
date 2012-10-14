@@ -1,52 +1,51 @@
 % layout 'default';
 % my @probes = @{stash 'probes'};
-<div class="block">
-  <h2>Available probes</h2>
+<h2>Custom script</h2>
 
-  <div id="page_nav" class="block_head">
-    <ul class="submenu">
-      <li><%= link_to probes_add => (class => "link") => begin %>Add a new probe<% end %></li>
-    </ul>
-  </div>
-
-  <div id="probes" class="block_body">
-    <% if (scalar(@probes)) { %>
-    <%= form_for probes_script => (method => 'POST') => begin %>
-    <table class="block_table">
-      <tr>
-	<th>&nbsp;</th>
-	<th>Probe</th>
-	<th>Description</th>
-	<th>Type</th>
-	<th>Version</th>
-      </tr>
-      <% foreach my $p (@probes) { %>
-      <%     my %line = %{$p}; %>
-      <tr>
-	<td>
-	  <%= check_box selection => $line{id} %>
-	</td>
-	<td>
-	  <%= link_to probes_show => { id => $line{id} } => begin %><%= $line{name} %><% end %>
-	</td>
-	<td>
-	  <%= $line{desc} %>
-	</td>
-	<td>
-	  <%= $line{type} %>
-	</td>
-	<td>
-	  <%= $line{version} %>
-	</td>
-      </tr>
-      <% } %>
-    </table>
-    <div class="submit">
-      <%= submit_button 'Create Script', name => 'genscript' %>
-    </div>
-    <% end %>
-    <% } else { %>
-    <p>No probes found</p>
-    <% } %>
-  </div>
+<div class="btn-group pull-right">
+  <%= link_to probes_add => (class => "btn") => begin %>Add a new probe<% end %>
 </div>
+
+<div style="clear: both;"></div>
+
+<div id="probes" style="margin-top: 30px;">
+  <% if (scalar(@probes)) { %>
+  <%= form_for probes_script => (method => 'POST') => begin %>
+  <table class="table table-condensed table-striped" id="probes">
+    <tr>
+      <th><i class="icon-check" id="chkall"></i></th>
+      <th>Probe</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Minumum version</th>
+      <th>Maximum version</th>
+    </tr>
+    <% foreach my $p (@probes) { %>
+    <%     my %line = %{$p}; %>
+    <tr>
+      <td><%= check_box selection => $line{id} %></td>
+      <td><%= link_to probes_show => { id => $line{id} } => begin %><%= $line{name} %><% end %></td>
+      <td><%= $line{desc} %></td>
+      <td><%= $line{type} %></td>
+      <td><%= $line{min_version} %></td>
+      <td><%= $line{max_version} %></td>
+    </tr>
+    <% } %>
+  </table>
+  
+  <div class="form-actions">
+    <%= submit_button 'Create Script', name => 'genscript', class => 'btn btn-primary' %>
+  </div>
+  <% end %>
+  <% } else { %>
+  <p>No probes found</p>
+  <% } %>
+</div>
+
+<script>
+$("#chkall").click(function() {
+    $("#probes").find("input[type=checkbox]").each(function(i) {
+        $(this).prop("checked", !$(this).prop("checked"));
+    });
+});
+</script>
