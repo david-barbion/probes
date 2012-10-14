@@ -334,4 +334,378 @@ sub check {
 
 }
 
+sub list {
+    my $self = shift;
+
+    my $dbh = $self->database;
+    my $sth = $dbh->prepare(qq{SELECT id, username, email, first_name, last_name, is_admin, upload_count
+FROM users
+ORDER BY username});
+    $sth->execute;
+    my $users = [ ];
+    while (my ($i, $u, $e, $fn, $ln, $a, $c) = $sth->fetchrow) {
+	push @{$users}, { id => $i, name => $u, email => $e, fname => $fn,
+			  lname => $ln, admin => $a, uploads => $c };
+    }
+    $sth->finish;
+
+    $dbh->commit;
+    $dbh->disconnect;
+
+    $self->stash(users => $users);
+
+    $self->render;
+}
+
+sub add {
+    my $self = shift;
+
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+        # process the input data
+        my $form_data = $self->req->params->to_hash;
+
+	# Action depends on the name of the button pressed
+	if (exists $form_data->{save}) {
+	    # Error processing
+	    my $e = 0;
+
+	    if ($form_data->{username} eq '') {
+		$self->msg->error("Empty username");
+		$e = 1;
+	    }
+	    if ($form_data->{email} eq '') {
+		$self->msg->error("Empty E-mail address");
+		$e = 1;
+	    }
+	    if ($form_data->{passwd} eq '') {
+		$self->msg->error("Empty password");
+		$e = 1;
+	    }
+
+	    unless ($e) {
+		my $dbh = $self->database;
+		my $rb = 0;
+
+		my $sth = $dbh->prepare(qq{INSERT INTO users (username, password, email, first_name, last_name, is_admin) VALUES (?, ?, ?, ?, ?, ?)});
+$rb = 1 unless defined $sth->execute($form_data->{username},
+				     sha256_hex($form_data->{passwd}),
+				     $form_data->{email},
+				     $form_data->{fname} ||= undef,
+				     $form_data->{lname} ||= undef,
+				     $form_data->{admin} ||= 0);
+
+		$sth->finish;
+
+		if ($rb) {
+		    if ($dbh->state eq '23505') { # Unique violation contraint on username
+			$self->msg->error("Username already exists");
+		    } else {
+			$self->msg->error("An error occured while saving. Action has been cancelled");
+		    }
+		    $dbh->rollback;
+		    $dbh->disconnect;
+		} else {
+		    $self->msg->info("Account creation successful");
+		    $dbh->commit;
+		    $dbh->disconnect;
+		    return $self->redirect_to('users_list');
+		}
+	    }
+	} else {
+	    # Cancel button pressed
+	    return $self->redirect_to('users_list');
+	}
+    }
+
+    $self->render;
+}
+
+sub edit {
+    my $self = shift;
+
+    my $id = $self->param('id');
+    my $e = 0;
+
+    my $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+        # process the input data
+        my $form_data = $self->req->params->to_hash;
+
+	# Action depends on the name of the button pressed
+	if (exists $form_data->{save}) {
+	    # Error processing
+	    if ($form_data->{username} eq '') {
+		$self->msg->error("Empty username");
+		$e = 1;
+	    }
+	    if ($form_data->{email} eq '') {
+		$self->msg->error("Empty E-mail address");
+		$e = 1;
+	    }
+
+	    unless ($e) {
+		my $dbh = $self->database;
+		my $sth;
+		my $rb = 0;
+		if ($form_data->{passwd} eq '') {
+		    $sth = $dbh->prepare(qq{UPDATE users SET username = ?, email = ?, first_name = ?,
+  last_name = ?, is_admin = ?
+WHERE id = ?});
+		    $rb = 1 unless defined $sth->execute($form_data->{username},
+							 $form_data->{email},
+							 $form_data->{fname} ||= undef,
+							 $form_data->{lname} ||= undef,
+							 $form_data->{admin} ||= 0,
+							 $id);
+		    $sth->finish;
+		} else {
+		    # Update the password too
+		    $sth = $dbh->prepare(qq{UPDATE users SET username = ?, password = ?, email = ?,
+  first_name = ?, last_name = ?, is_admin = ?
+WHERE id = ?});
+		    $rb = 1 unless defined $sth->execute($form_data->{username},
+							 sha256_hex($form_data->{passwd}),
+							 $form_data->{email},
+							 $form_data->{fname} ||= undef,
+							 $form_data->{lname} ||= undef,
+							 $form_data->{admin} ||= 0,
+							 $id);
+		    $sth->finish;
+		}
+
+		if ($rb) {
+		    if ($dbh->state eq '23505') { # Unique violation contraint on username
+			$self->msg->error("Username already exists");
+		    } else {
+			$self->msg->error("An error occured while saving. Action has been cancelled");
+		    }
+		    $dbh->rollback;
+		    $dbh->disconnect;
+		} else {
+		    $self->msg->info("Account update successful");
+		    $dbh->commit;
+		    $dbh->disconnect;
+		    return $self->redirect_to('users_list');
+		}
+	    }
+	} else {
+	    return $self->redirect_to('users_list');
+	}
+    }
+
+    my $dbh = $self->database;
+    # Get the account data
+    my $sth = $dbh->prepare(qq{SELECT username, email, first_name, last_name, is_admin, upload_count
+FROM users WHERE id = ?});
+    $sth->execute($id);
+    my ($u, $m, $fn, $ln, $a, $c) = $sth->fetchrow;
+    $sth->finish;
+    $dbh->commit;
+    $dbh->disconnect;
+
+    # Check if the user exists
+    if (!defined $u) {
+	return $self->render_not_found;
+    }
+
+    # Set the state of the admin checkbox, without overwriting the
+    # submitted data when a save error occurs
+    $self->param('admin', 'on') if ($a && !$e);
+
+    $self->stash(user => { name => $u,
+			   email => $m,
+			   fname => $fn,
+			   lname => $ln,
+			   uploads => $c });
+
+    $self->render;
+}
+
+sub remove {
+    my $self = shift;
+
+    my $id = $self->param('id');
+
+    my  $method = $self->req->method;
+    if ($method =~ m/^POST$/i) {
+	# process the input data
+	my $form_data = $self->req->params->to_hash;
+
+	# Redirect if cancel button has been pressed
+	if (exists $form_data->{remove}) {
+
+	    my $e = 0;
+	    if (exists $form_data->{data}) {
+		if ($form_data->{data} eq 'reassign' && $form_data->{to_user} eq '') {
+		    $self->msg->error("Undefined target user for ownership transfer");
+		    $e = 1;
+		}
+	    } else {
+		$self->msg->error("Action for data undefined");
+		$e = 1;
+	    }
+
+	    unless ($e) {
+		my $dbh = $self->database;
+		my $sth;
+		my $rb = 0;
+
+		if ($form_data->{data} eq 'reassign') {
+		    # Update everything using the provided id
+		    foreach my $t (qw/graphs probes reports results scripts/) {
+			$sth = $dbh->prepare(qq{UPDATE $t SET id_owner = ? WHERE id_owner = ?});
+			unless (defined $sth->execute($form_data->{to_user},
+						      $id)) {
+			    $rb = 1;
+			    last;
+			}
+		    }
+
+		    $sth->finish;
+		} else {
+		    # Remove everything owned by the user
+		    # Reports
+		    $sth = $dbh->prepare(qq{DELETE FROM report_contents USING reports
+WHERE id_report = reports.id AND reports.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM reports WHERE id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    # Graphs
+		    $sth = $dbh->prepare(qq{DELETE FROM graphs_options USING graphs
+WHERE id_graph = graphs.id AND graphs.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM report_contents USING graphs
+WHERE id_graph = graphs.id AND graphs.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM probe_graphs USING graphs
+WHERE id_graph = graphs.id AND graphs.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM graphs WHERE id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    # Results
+		    $sth = $dbh->prepare(qq{DELETE FROM probes_in_sets USING results
+WHERE id_result = results.id AND results.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM report_contents USING results
+WHERE id_result = results.id AND results.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM results WHERE id_owner = ? RETURNING id});
+		    $rb = 1 unless defined $sth->execute($id);
+
+		    while (my ($i) = $sth->fetchrow) {
+			$rb = 1 unless $dbh->do(qq{DROP SCHEMA data_$i CASCADE});
+		    }
+
+		    $sth->finish;
+
+		    # Scripts
+		    $sth = $dbh->prepare(qq{DELETE FROM script_probes USING scripts
+WHERE id_script = scripts.id AND scripts.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM scripts WHERE id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    # Probes
+		    $sth = $dbh->prepare(qq{DELETE FROM probes_in_sets USING probes
+WHERE id_probe = probes.id AND probes.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM probe_graphs USING probes
+WHERE id_probe = probes.id AND probes.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM script_probes USING probes
+WHERE id_probe = probes.id AND probes.id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+
+		    $sth = $dbh->prepare(qq{DELETE FROM probes WHERE id_owner = ?});
+		    $rb = 1 unless defined $sth->execute($id);
+		    $sth->finish;
+		}
+
+		# Remove the user
+		$sth = $dbh->prepare(qq{DELETE FROM users WHERE id = ?});
+		$rb = 1 unless defined $sth->execute($id);
+		$sth->finish;
+
+		if ($rb) {
+		    $self->msg->error("An error occured while saving. Action has been cancelled");
+		    $dbh->rollback;
+		    $dbh->disconnect;
+		} else {
+		    $self->msg->info("Account removed");
+		    $dbh->commit;
+		    $dbh->disconnect;
+		    return $self->redirect_to('users_list');
+		}
+	    }
+	} else {
+	    # Cancel button
+	    return $self->redirect_to('users_list');
+	}
+    }
+
+    my $dbh = $self->database;
+    # Get the account data
+    my $sth = $dbh->prepare(qq{SELECT username, email, first_name, last_name, is_admin
+FROM users WHERE id = ?});
+    $sth->execute($id);
+    my ($u, $m, $fn, $ln, $a) = $sth->fetchrow;
+    $sth->finish;
+
+    # Check if the user exists
+    if (!defined $u) {
+	return $self->render_not_found;
+    }
+
+    # Get the list of account for reassign ownership
+    $sth = $dbh->prepare(qq{SELECT id, username, first_name, last_name FROM users
+WHERE id <> ?});
+    $sth->execute($id);
+
+    my $users = [ '' ];
+    while (my ($i, $n, $f, $l) = $sth->fetchrow) {
+	$f = '' if (! defined $f);
+	$l = '' if (! defined $l);
+	push @{$users}, [ qq{$n ($f $n)} => $i ];
+    }
+    $sth->finish;
+
+    $dbh->commit;
+    $dbh->disconnect;
+
+    $self->stash(users => $users);
+    $self->stash(user => { name => $u,
+			   email => $m,
+			   fname => $fn,
+			   lname => $ln,
+			   admin => $a});
+
+    $self->render;
+}
+
+
 1;

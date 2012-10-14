@@ -1,0 +1,51 @@
+% layout 'default';
+% my %u = %{stash 'user'};
+<div class="box">
+  <h2>Remove account</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to users_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to users_show => { id => $id } => (class => "btn") => begin %>Edit<% end %>  
+    <%= link_to users_add => (class => "btn") => begin %>New account<% end %>
+  </div>
+
+  <div class="box-content">
+    <p><strong>Are you sure you want to remove this account?</strong></p>
+
+    <%= form_for users_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <div class="control-group">
+	<label class="control-label">Userame:</label>
+	<div class="controls"><p><%= $u{name} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">E-mail:</label>
+	<div class="controls"><p><%= $u{email} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Name:</label>
+	<div class="controls"><p><%= $u{fname} %> <%= $u{lname} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Admin privileges:</label>
+	<div class="controls"><p><% if ($u{admin}) { %>Yes<% } else { %>No<% } %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Data:</label>
+	<div class="controls">
+	  <ul class="unstyled">
+	    <li><label class="radio"><%= radio_button data => 'drop' %>Remove user's data</label></li>
+	    <li><label class="radio"><%= radio_button data => 'reassign' %>Reassign owned data to </label>
+	      <%= select_field to_user => $users %></li>
+	  </ul>
+	</div>
+      </div>
+
+    </fieldset>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" name="remove">Remove</button>
+      <button type="submit" class="btn" name="cancel">Cancel</button>
+    </div>
+    <% end %>
+  </div>
+</div>

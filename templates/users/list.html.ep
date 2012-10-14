@@ -1,0 +1,41 @@
+% layout 'default';
+% my @users = @{stash 'users'};
+<div class="box">
+  <h2>User Accounts</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to users_add => (class => "btn") => begin %>New account<% end %>
+  </div>
+
+  <div id="users" class="box-content">
+    <% if (scalar(@users)) { %>
+    <table class="table table-condensed table-striped">
+      <tr>
+	<th>Username</th>
+	<th>E-mail</th>
+	<th>Name</th>
+	<th>Admin</th>
+	<th>Uploads</th>
+	<th>&nbsp;</th>
+      </tr>
+      <% foreach my $u (@users) { %>
+      <%     my %line = %{$u}; %>
+      <tr>
+	<td><%= $line{name} %></td>
+	<td><%= $line{email} %></td>
+	<td><%= $line{fname} %> <%= $line{lname} %></td>
+	<td><% if ($line{admin}) { %>Yes<% } %></td>
+	<td><%= $line{uploads} %></td>
+	<td>
+	  <%= link_to users_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
+	  <%= link_to users_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
+	</td>
+
+      </tr>
+      <% } %>
+    </table>
+    <% } else { %>
+    <p>No user found</p>
+    <% } %>
+  </div>
+</div>

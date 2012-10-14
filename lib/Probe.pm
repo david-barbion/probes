@@ -61,7 +61,6 @@ sub startup {
     # Permissions
     $ra->route('/users')                           ->to('users#list')   ->name('users_list');
     $ra->route('/users/add')                       ->to('users#add')    ->name('users_add');
-    $ra->route('/users/:id', id => qr/\d+/)        ->to('users#show')   ->name('users_show');
     $ra->route('/users/:id/edit', id => qr/\d+/)   ->to('users#edit')   ->name('users_edit');
     $ra->route('/users/:id/remove', id => qr/\d+/) ->to('users#remove') ->name('users_remove');
 

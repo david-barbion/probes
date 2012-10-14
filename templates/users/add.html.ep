@@ -1,0 +1,64 @@
+% layout 'default';
+<div class="box">
+  <h2>Create a user account</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to users_list => (class => "btn") => begin %>Back to list<% end %>
+  </div>
+
+  <div id="form" class="box-content">
+    <%= form_for users_add => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <legend>Account details</legend>
+
+      <div class="control-group">
+	<label class="control-label" for="name"><strong>Username:</strong></label>
+	<div class="controls">
+	  <%= text_field 'username', type => 'text', class => 'span6', id => 'name' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="mail"><strong>E-mail:</strong></label>
+	<div class="controls">
+	  <%= text_field 'email', type => 'text', class => 'span6', id => 'mail' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="fname">First name:</label>
+	<div class="controls">
+	  <%= text_field 'fname', type => 'text', class => 'span6', id => 'fname' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="lname">Last name:</label>
+	<div class="controls">
+	  <%= text_field 'lname', type => 'text', class => 'span6', id => 'lname' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="passwd"><strong>Password:</strong></label>
+	<div class="controls">
+	  <%= text_field 'passwd', type => 'text', class => 'span6', id => 'passwd' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="admin">Admin privileges:</label>
+	<div class="controls">
+	  <%= check_box 'admin' => 'on', id => 'admin' %>
+	</div>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+
+    <% end %>
+  </div>
+</div>
