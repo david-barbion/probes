@@ -46,7 +46,9 @@ sub login {
 				     last_name => $l,
 				     admin => $a);
 
-	    return $self->redirect_to('site_home');
+	    my $target = $self->session('goback') || 'site_home';
+	    delete $self->session->{goback};
+	    return $self->redirect_to($target);
 	} else {
 	    $self->msg->error("Authentication failed");
 	}
@@ -324,14 +326,12 @@ sub check {
 	return 1;
     }
 
-    # Display the login form only if we are not on the home page
-    if ($self->current_route eq 'site_home') {
-	# Display the welcome page, the regular home page is for logged in people
-	return $self->render(template => 'site/welcome');
-    } else {
-	$self->redirect_to('users_login');
-        return 0;
-    }
+    # Remember the route to go back to the page that triggered the auth form
+    $self->session(goback => $self->current_route);
+    $self->redirect_to('users_login');
+
+    return 0;
+
 }
 
 1;

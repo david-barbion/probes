@@ -32,7 +32,7 @@ sub update_info {
 sub remove_info {
     my $self = shift;
 
-    map { delete $self->target->session->{$_} } qw(user_id user_username user_first_name user_last_name);
+    map { delete $self->target->session->{$_} } qw(user_id user_username user_first_name user_last_name user_admin);
 }
 
 sub is_authd {

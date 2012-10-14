@@ -1,51 +1,48 @@
 % layout 'default';
-
-<h2>Register</h2>
-
-<div id="form" class="span8">
+<div id="form" class="box">
   <%= form_for users_register => (method => 'POST', class => 'form-horizontal') => begin %>
   <fieldset>
-    <legend></legend>
+    <legend>Register</legend>
 
     <div class="control-group">
       <label class="control-label strong" for="username">Username:</label>
       <div class="controls">
-	<%= text_field 'username', type => 'text', class => 'span6', id => 'username' %>
+	<%= text_field 'username', type => 'text', id => 'username' %>
       </div>
     </div>
 
     <div class="control-group">
       <label class="control-label strong" for="password">Password:</label>
       <div class="controls">
-	<%= text_field 'password', type => 'password', class => 'span6', id => 'password' %>
+	<%= text_field 'password', type => 'password', id => 'password' %>
       </div>
     </div>
 
     <div class="control-group">
       <label class="control-label strong" for="confirm_password">Confirm Password:</label>
       <div class="controls">
-	<%= text_field 'confirm_password', type => 'password', class => 'span6', id => 'confirm_password' %>
+	<%= text_field 'confirm_password', type => 'password', id => 'confirm_password' %>
       </div>
     </div>
 
     <div class="control-group">
       <label class="control-label" for="first_name">First name:</label>
       <div class="controls">
-	<%= text_field 'first_name', type => 'text', class => 'span6', id => 'first_name' %>
+	<%= text_field 'first_name', type => 'text', id => 'first_name' %>
       </div>
     </div>
 
     <div class="control-group">
       <label class="control-label" for="last_name">Last name:</label>
       <div class="controls">
-	<%= text_field 'last_name', type => 'text', class => 'span6', id => 'last_name' %>
+	<%= text_field 'last_name', type => 'text', id => 'last_name' %>
       </div>
     </div>
 
     <div class="control-group">
       <label class="control-label strong" for="email">E-mail:</label>
       <div class="controls">
-	<%= text_field 'email', type => 'text', class => 'span6', id => 'email' %>
+	<%= text_field 'email', type => 'text', id => 'email' %>
       </div>
     </div>
 
@@ -55,3 +52,4 @@
   </fieldset>
   <% end %>
 </div>
+

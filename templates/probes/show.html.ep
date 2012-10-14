@@ -1,5 +1,6 @@
 % layout 'default';
 % my %p = %{stash 'probe'};
+<div class="box">
 <h2><%= $p{name} %></h2>
 
 <div class="btn-group pull-right">
@@ -9,26 +10,24 @@
   <%= link_to probes_remove => { id => $id } => (class => "btn") => begin %>Delete<% end %>
 </div>
 
-<div style="clear: both;"></div>
-
-<div id="probes" style="margin-top: 30px;">
-  <dl>
-    <dt>Name:</dt><dd><%= $p{name} %></dd>
-    <dt>Type:</dt><dd><%= $p{type} %></dd>
-    <dt>Description:</dt><dd><%= $p{desc} %></dd>
-    <dt>Minimum version:</dt><dd><%= $p{min_version} %></dd>
-    <dt>Maximum version:</dt><dd><%= $p{max_version} %></dd>
-    <dt>Probe query/command:</dt><dd>
+<div id="probes" class="box-content">
+  <table class="table table-desc">
+    <tr><th class="span3">Name:</th><td><%= $p{name} %></td></tr>
+    <tr><th>Type:</th><td><%= $p{type} %></td></tr>
+    <tr><th>Description:</th><td><%= $p{desc} %></td></tr>
+    <tr><th>Minimum version:</th><td><%= $p{min_version} %></td></tr>
+    <tr><th>Maximum version:</th><td><%= $p{max_version} %></td></tr>
+    <tr><th>Probe query/command:</th><td>
       <% if ($p{query}) { %>
       <pre><%= $p{query} %></pre>
-      <% } else { %>None<% } %></dd>
-    <dt>Preload command:</dt><dd>
+      <% } else { %>None<% } %></td></tr>
+    <tr><th>Preload command:</th><td>
       <% if ($p{preload}) { %>
       <pre><%= $p{preload} %></pre>
-      <% } else { %>None<% } %></dd>
-    <dt>Target table:</dt><dd><pre><%= $p{ddlq} %></pre></dd>
-    <dt>Path in archive:</dt><dd><%= $p{path} %></dd>
-    <dt>Enabled:</dt><dd><% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></dd>
-  </dl>
+      <% } else { %>None<% } %></td></tr>
+    <tr><th>Target table:</th><td><pre><%= $p{ddlq} %></pre></td></tr>
+    <tr><th>Path in archive:</th><td><%= $p{path} %></td></tr>
+    <tr><th>Enabled:</th><td><% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></td></tr>
+  </table>
 </div>
-
+</div>

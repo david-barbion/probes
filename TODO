@@ -1,36 +1,31 @@
 ==== everything ====
 
 - check db error, at least for writes and query run on user input
-
 - add messages where needed
-
 - add breadcrumbs ? or page tree path ?
 
 ==== graphs ====
 
 - show/hide series ?
-
 - TOC
-
 - clone graphs
 
 ==== probe ====
 
 - clone probe
-
-- remove data and graphs from reports on deletion ?
+- remove data and graphs from reports on deletion?
 
 ==== scripts ====
 
 - limit the time range of output to the run
-
 - add different modes: cron
 
 ==== css ====
 
-- use btn-mini for action links in tables
-
 - use red for remove buttons
-
 - missing stuff from bootstrap
 
+==== users ====
+
+- add the admin pages
+- create a new home page with login form

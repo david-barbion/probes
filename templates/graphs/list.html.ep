@@ -1,39 +1,39 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
-<h2>Available graphs</h2>
+<div class="box">
+  <h2>Available graphs</h2>
 
-<div class="btn-group pull-right">
-  <%= link_to graphs_add => (class => "btn") => begin %>New graph<% end %>
-</div>
+  <div class="btn-group pull-right">
+    <%= link_to graphs_add => (class => "btn") => begin %>New graph<% end %>
+  </div>
+  
+  <div id="probes" class="box-content">
+    <% if (scalar(@graphs)) { %>
+    <table class="table table-condensed table-striped">
+      <tr>
+	<th>Graph</th>
+	<th>Description</th>
+	<th>Probes</th>
+	<th>Owner</th>
+	<th>&nbsp;</th>
+      </tr>
+      <% foreach my $g (@graphs) { %>
+      <%     my %line = %{$g}; %>
+      <tr>
+	<td><%= link_to graphs_show => { id => $line{id} } => begin %><%= $line{name} %><% end %></td>
+	<td><%= $line{desc} %></td>
+	<td><%= $line{probes} %></td>
+	<td><%= $line{owner} %></td>
+	<td>
+	  <%= link_to graphs_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %>
+	  <%= link_to graphs_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %>
+	</td>
 
-<div style="clear: both;"></div>
-
-<div id="probes" style="margin-top: 30px;">
-  <% if (scalar(@graphs)) { %>
-  <table class="table table-condensed table-striped">
-    <tr>
-      <th>Graph</th>
-      <th>Description</th>
-      <th>Probes</th>
-      <th>Owner</th>
-      <th>&nbsp;</th>
-    </tr>
-    <% foreach my $g (@graphs) { %>
-    <%     my %line = %{$g}; %>
-    <tr>
-      <td><%= link_to graphs_show => { id => $line{id} } => begin %><%= $line{name} %><% end %></td>
-      <td><%= $line{desc} %></td>
-      <td><%= $line{probes} %></td>
-      <td><%= $line{owner} %></td>
-      <td>
-	<%= link_to graphs_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %>
-	<%= link_to graphs_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %>
-      </td>
-
-    </tr>
+      </tr>
+      <% } %>
+    </table>
+    <% } else { %>
+    <p>No graph found</p>
     <% } %>
-  </table>
-  <% } else { %>
-  <p>No graph found</p>
-  <% } %>
+  </div>
 </div>

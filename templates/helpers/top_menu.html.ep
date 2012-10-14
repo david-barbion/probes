@@ -1,16 +1,19 @@
+% my $cr = current_route;
 <ul class="nav">
-% if ($user_level eq "guest" ) {
-  <li><%= link_to site_home => begin %>Home<% end %></li>
-% } elsif ($user_level eq "user" ) {
-  <li><%= link_to site_home => begin %>Home<% end %></li>
-  <li><%= link_to site_help => begin %>Help<% end %></li>
-% } elsif ($user_level eq "admin") {
-  <li><%= link_to site_home => begin %>Home<% end %></li>
-  <li><%= link_to probes_list => begin %>Probes<% end %></li>
-  <li><%= link_to scripts_list => begin %>Scripts<% end %></li>
-  <li><%= link_to results_list => begin %>Results<% end %></li>
-  <li><%= link_to reports_list => begin %>Reports<% end %></li>
-  <li><%= link_to graphs_list => begin %>Graphs<% end %></li>
-  <li><%= link_to site_help => begin %>Help<% end %></li>
-% }
+  % if ($user_level eq "guest") {
+  <li <% if ($cr eq "site_home") { %>class="active"<% } %>><%= link_to site_home  => begin %>Home<% end %></li>
+  % } elsif ($user_level eq "user" ) {
+  <li <% if ($cr eq "site_home") { %>class="active"<% } %>><%= link_to site_home  => begin %>Home<% end %></li>
+  <li <% if ($cr =~ m!^scripts_!) { %>class="active"<% } %>><%= link_to scripts_list => begin %>Scripts<% end %></li>
+  <li <% if ($cr =~ m!^results_!) { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
+  <li <% if ($cr =~ m!^reports_!) { %>class="active"<% } %>><%= link_to reports_list => begin %>Reports<% end %></li>
+  % } elsif ($user_level eq "admin") {
+  <li <% if ($cr eq "site_home") { %>class="active"<% } %>><%= link_to site_home  => begin %>Home<% end %></li>
+  <li <% if ($cr =~ m!^scripts_!) { %>class="active"<% } %>><%= link_to scripts_list => begin %>Scripts<% end %></li>
+  <li <% if ($cr =~ m!^results_!) { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
+  <li <% if ($cr =~ m!^reports_!) { %>class="active"<% } %>><%= link_to reports_list => begin %>Reports<% end %></li>
+  <li <% if ($cr =~ m!^probes_!) { %>class="active"<% } %>><%= link_to probes_list => begin %>Probes<% end %></li>
+  <li <% if ($cr =~ m!^graphs_!) { %>class="active"<% } %>><%= link_to graphs_list => begin %>Graphs<% end %></li>
+  <li <% if ($cr =~ m!^users_!) { %>class="active"<% } %>><%= link_to users_list => begin %>Users<% end %></li>
+  % }
 </ul>

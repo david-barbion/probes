@@ -1,76 +1,76 @@
 % layout 'default';
 % my %p = %{stash 'probe'};
-<h2>Remove probe</h2>
+<div class="box">
+  <h2>Remove probe</h2>
 
-<div class="btn-group pull-right">
-  <%= link_to probes_list => (class => "btn") => begin %>Back to list<% end %>
-  <%= link_to probes_show => { id => $id } => (class => "btn") => begin %>Back to details<% end %>
-</div>
-
-<div style="clear: both;"></div>
-
-<div style="margin-top: 30px;">
-  <p>Results, graphs and scripts using this probe will be updated. <strong>Are you sure you want to remove this probe?</strong></p>
-
-  <%= form_for probes_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
-  <fieldset>
-    <div class="control-group">
-      <label class="control-label">Name</label>
-      <div class="controls"><p><%= $p{name} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Description</label>
-      <div class="controls"><p><%= $p{desc} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Type</label>
-      <div class="controls"><p><%= $p{type} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Version</label>
-      <div class="controls"><p><% if ($p{min_version}) { %><%= $p{min_version} %><% } else { %>None<% } %> -
-	  <% if ($p{max_version}) { %><%= $p{max_version} %><% } else { %>None<% } %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Query / Command</label>
-      <div class="controls"><% if ($p{query}) {  %><pre><%= $p{query} %></pre><% } else { %><p>None</p><% } %></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Preload command</label>
-      <div class="controls"><% if ($p{preload}) {  %><pre><%= $p{preload} %></pre><% } else { %><p>None</p><% } %></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Target table</label>
-      <div class="controls"><pre><%= $p{ddlq} %></pre></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Path in archive</label>
-      <div class="controls"><p><%= $p{path} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Enabled</label>
-      <div class="controls"><p><% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Results using this probe</label>
-      <div class="controls"><p><%= $p{results} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Graphs using this probe</label>
-      <div class="controls"><p><%= $p{graphs} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Scripts using this probe</label>
-      <div class="controls"><p><%= $p{scripts} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Owner</label>
-      <div class="controls"><p><%= $p{owner} %></p></div>
-    </div>
-  </fieldset>
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary" name="remove">Remove</button>
-    <button type="submit" class="btn" name="cancel">Cancel</button>
+  <div class="btn-group pull-right">
+    <%= link_to probes_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to probes_show => { id => $id } => (class => "btn") => begin %>Back to details<% end %>
   </div>
-  <% end %>
+
+  <div class="box-content">
+    <p>Results, graphs and scripts using this probe will be updated. <strong>Are you sure you want to remove this probe?</strong></p>
+
+    <%= form_for probes_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <div class="control-group">
+	<label class="control-label">Name</label>
+	<div class="controls"><p><%= $p{name} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Description</label>
+	<div class="controls"><p><%= $p{desc} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Type</label>
+	<div class="controls"><p><%= $p{type} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Version</label>
+	<div class="controls"><p><% if ($p{min_version}) { %><%= $p{min_version} %><% } else { %>None<% } %> -
+	    <% if ($p{max_version}) { %><%= $p{max_version} %><% } else { %>None<% } %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Query / Command</label>
+	<div class="controls"><% if ($p{query}) {  %><pre><%= $p{query} %></pre><% } else { %><p>None</p><% } %></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Preload command</label>
+	<div class="controls"><% if ($p{preload}) {  %><pre><%= $p{preload} %></pre><% } else { %><p>None</p><% } %></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Target table</label>
+	<div class="controls"><pre><%= $p{ddlq} %></pre></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Path in archive</label>
+	<div class="controls"><p><%= $p{path} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Enabled</label>
+	<div class="controls"><p><% if ($p{enabled}) { %>Yes<% } else { %>No<% } %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Results using this probe</label>
+	<div class="controls"><p><%= $p{results} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Graphs using this probe</label>
+	<div class="controls"><p><%= $p{graphs} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Scripts using this probe</label>
+	<div class="controls"><p><%= $p{scripts} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Owner</label>
+	<div class="controls"><p><%= $p{owner} %></p></div>
+      </div>
+    </fieldset>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" name="remove">Remove</button>
+      <button type="submit" class="btn" name="cancel">Cancel</button>
+    </div>
+    <% end %>
+  </div>
 </div>

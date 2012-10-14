@@ -5,6 +5,7 @@
   </a>
   <ul class="dropdown-menu">
     <li><%= link_to users_profile => begin %>Profile<% end %></li>
+    <li><%= link_to site_help => begin %>Help<% end %></li>
     <li class="divider"></li>
     <li><%= link_to users_logout => begin %>Sign Out<% end %></li>
   </ul>

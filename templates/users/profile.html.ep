@@ -1,120 +1,113 @@
 % layout 'default';
+<div class="box">
+  <h2>Settings</h2>
 
-<ul id="steptabs" class="nav nav-tabs">
-  <li class="<%= $profile_pane %>"><a href="#profile" data-toggle="tab">Profile</a></li>
-  <li class="<%= $account_pane %>"><a href="#account" data-toggle="tab">Account</a></li>
-  <li class="<%= $password_pane %>"><a href="#password" data-toggle="tab">Password</a></li>
+  <div class="box-content">
+    <ul id="steptabs" class="nav nav-tabs">
+      <li class="<%= $profile_pane %>"><a href="#profile" data-toggle="tab">Profile</a></li>
+      <li class="<%= $account_pane %>"><a href="#account" data-toggle="tab">Account</a></li>
+      <li class="<%= $password_pane %>"><a href="#password" data-toggle="tab">Password</a></li>
 
-</ul>
+    </ul>
 
-<div id="steptabscontents" class="tab-content">
-  <div class="tab-pane <%= $profile_pane %>" id="profile">
+    <div id="steptabscontents" class="tab-content">
+      <div class="tab-pane <%= $profile_pane %>" id="profile">
 
-    <div class="page-header">
-      <h2>Profile</h2>
-    </div>
+	<div>
+	  <p>Here are some information about your account:</p>
 
-    <div>
-      <p>Here are some information about your account:</p>
-
-      <dl class="dl-horizontal">
-	<dt>Username:</dt>
-	<dd><%= $username %></dd>
-	<dt>Upload count:</dt>
-	<dd><%= $uploads %></dd>
-      </dl>
-    </div>
-
-  </div>
-
-  <div class="tab-pane <%= $account_pane %>" id="account">
-
-    <div class="page-header">
-      <h2>Account</h2>
-    </div>
-
-    <p>You may update your personnal information here.</p>
-
-    <div class="span8">
-      <%= form_for users_profile => (method => 'POST', class => 'form-horizontal') => begin %>
-      <fieldset>
-	<legend></legend>
-	<div class="control-group">
-	  <label class="control-label" for="username">Username:</label>
-	  <div class="controls">
-	    <%= text_field username => $username, type => 'text', class => 'span6', id => 'username' %>
-	  </div>
-	</div>
-	
-	<div class="control-group">
-	  <label class="control-label" for="first_name">First name:</label>
-	  <div class="controls">
-	    <%= text_field first_name => $first_name, type => 'text', class => 'span6', id => 'first_name' %>
-	  </div>
+	  <dl class="dl-horizontal">
+	    <dt>Username:</dt>
+	    <dd><%= $username %></dd>
+	    <dt>Upload count:</dt>
+	    <dd><%= $uploads %></dd>
+	  </dl>
 	</div>
 
-	<div class="control-group">
-	  <label class="control-label" for="last_name">Last name:</label>
-	  <div class="controls">
-	    <%= text_field last_name => $last_name, type => 'text', class => 'span6', id => 'last_name' %>
-	  </div>
+      </div>
+
+      <div class="tab-pane <%= $account_pane %>" id="account">
+
+	<p>You may update your personnal information here.</p>
+
+	<div>
+	  <%= form_for users_profile => (method => 'POST', class => 'form-horizontal') => begin %>
+	  <fieldset>
+	    <legend></legend>
+	    <div class="control-group">
+	      <label class="control-label" for="username">Username:</label>
+	      <div class="controls">
+		<%= text_field username => $username, type => 'text', id => 'username' %>
+	      </div>
+	    </div>
+	    
+	    <div class="control-group">
+	      <label class="control-label" for="first_name">First name:</label>
+	      <div class="controls">
+		<%= text_field first_name => $first_name, type => 'text', id => 'first_name' %>
+	      </div>
+	    </div>
+
+	    <div class="control-group">
+	      <label class="control-label" for="last_name">Last name:</label>
+	      <div class="controls">
+		<%= text_field last_name => $last_name, type => 'text', id => 'last_name' %>
+	      </div>
+	    </div>
+
+	    <div class="control-group">
+	      <label class="control-label" for="email">E-mail:</label>
+	      <div class="controls">
+		<%= text_field email => $email, type => 'text', id => 'email' %>
+	      </div>
+	    </div>
+
+	    <div class="form-actions">
+	      <%= submit_button 'Save changes', name => 'save_account', class => 'btn btn-primary' %>
+	    </div>
+	  </fieldset>
+	  <% end %>
 	</div>
+      </div>
 
-	<div class="control-group">
-	  <label class="control-label" for="email">E-mail:</label>
-	  <div class="controls">
-	    <%= text_field email => $email, type => 'text', class => 'span6', id => 'email' %>
-	  </div>
+
+      <div class="tab-pane <%= $password_pane %>" id="password">
+
+	<p>Use this form to change your password.</p>
+
+	<div>
+	  <%= form_for users_profile => (method => 'POST', class => 'form-horizontal') => begin %>
+	  <fieldset>
+	    <legend></legend>
+	    <div class="control-group">
+	      <label class="control-label" for="current_password">Current Password:</label>
+	      <div class="controls">
+		<%= text_field 'current_password', type => 'password', id => 'current_password' %>
+	      </div>
+	    </div>
+
+
+	    <div class="control-group">
+	      <label class="control-label" for="password">New Password:</label>
+	      <div class="controls">
+		<%= text_field 'password', type => 'password', id => 'password' %>
+	      </div>
+	    </div>
+
+	    <div class="control-group">
+	      <label class="control-label" for="confirm_password">Confirm Password:</label>
+	      <div class="controls">
+		<%= text_field 'confirm_password', type => 'password', id => 'confirm_password' %>
+	      </div>
+	    </div>
+
+	    <div class="form-actions">
+	      <%= submit_button 'Save changes', name => 'save_password', class => 'btn btn-primary' %>
+	    </div>
+
+	    <% end %>
 	</div>
-
-	<div class="form-actions">
-	  <%= submit_button 'Save changes', name => 'save_account', class => 'btn btn-primary' %>
-	</div>
-      </fieldset>
-      <% end %>
-    </div>
-  </div>
-
-
-  <div class="tab-pane <%= $password_pane %>" id="password">
-
-    <div class="page-header">
-      <h2>Password</h2>
-    </div>
-
-    <p>Use this form to change your password.</p>
-
-    <div class="span8">
-      <%= form_for users_profile => (method => 'POST', class => 'form-horizontal') => begin %>
-      <fieldset>
-	<legend></legend>
-	<div class="control-group">
-	  <label class="control-label" for="current_password">Current Password:</label>
-	  <div class="controls">
-	    <%= text_field 'current_password', type => 'password', class => 'span6', id => 'current_password' %>
-	  </div>
-	</div>
-
-
-	<div class="control-group">
-	  <label class="control-label" for="password">New Password:</label>
-	  <div class="controls">
-	    <%= text_field 'password', type => 'password', class => 'span6', id => 'password' %>
-	  </div>
-	</div>
-
-	<div class="control-group">
-	  <label class="control-label" for="confirm_password">Confirm Password:</label>
-	  <div class="controls">
-	    <%= text_field 'confirm_password', type => 'password', class => 'span6', id => 'confirm_password' %>
-	  </div>
-	</div>
-
-	<div class="form-actions">
-	  <%= submit_button 'Save changes', name => 'save_password', class => 'btn btn-primary' %>
-	</div>
-
-	<% end %>
+      </div>
     </div>
   </div>
 </div>

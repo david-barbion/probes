@@ -1,32 +1,40 @@
 % layout 'default';
 
-<h2>Login</h2>
+<div class="row">
+  <div class="span8">
+    <h2>Welcome to Probes</h2>
 
-<p>Enter your authentication credentials below to log in. You need to have cookies enabled to log in.</p>
+    <p>Gather data on your systems and display it as graphs using PostgreSQL</p>
+  </div>
 
-<p>If you do not have an account, you can <%= link_to users_register => begin %>register<% end %>.</p>
 
-<div id="form" class="span8">
-  <%= form_for users_login => (method => 'POST', class => 'form-horizontal') => begin %>
-  <fieldset>
-    <legend></legend>
-    <div class="control-group">
-      <label class="control-label strong" for="username">Username:</label>
-      <div class="controls">
-	<%= text_field 'username', type => 'text', class => 'span6', id => 'username' %>
+  <div class="box span3">
+    <%= form_for users_login => (method => 'POST') => begin %>
+    <fieldset>
+      <legend>Login</legend>
+
+
+
+      <div class="control-group">
+	<label class="control-label" for="username">Username:</label>
+	<div class="controls">
+	  <%= text_field 'username', type => 'text', class => 'span3', id => 'username' %>
+	</div>
       </div>
-    </div>
 
-    <div class="control-group">
-      <label class="control-label strong" for="password">Password:</label>
-      <div class="controls">
-	<%= text_field 'password', type => 'password', class => 'span6', id => 'password' %>
+      <div class="control-group">
+	<label class="control-label" for="password">Password:</label>
+	<div class="controls">
+	  <%= text_field 'password', type => 'password', class => 'span3', id => 'password' %>
+	</div>
       </div>
-    </div>
 
-    <div class="form-actions">
-      <%= submit_button 'Login', name => 'login', class => 'btn btn-primary' %>
-    </div>
-  </fieldset>
-  <% end %>
+      <div class="btn-group pull-right">
+	<%= link_to users_register => (class => 'btn') => begin %>Register<% end %>
+	<%= submit_button 'Login', name => 'login', class => 'btn btn-primary' %>
+      </div>
+    </fieldset>
+    <% end %>
+  </div>
+
 </div>

@@ -1,44 +1,44 @@
 % layout 'default';
 % my %g = %{stash 'graph'};
-<h2>Remove graph</h2>
+<div class="box">
+  <h2>Remove graph</h2>
 
-<div class="btn-group pull-right">
-  <%= link_to graphs_show => { id => $id } => (class => "btn") => begin %>Back to details<% end %>  
-  <%= link_to graphs_list => (class => "btn") => begin %>Back to list<% end %>
-  <%= link_to graphs_add => (class => "btn") => begin %>New graph<% end %>
-</div>
-
-<div style="clear: both;"></div>
-
-<div style="margin-top: 30px;">
-  <p>Reports using this graph will be updated. <strong>Are you sure you want to remove this graph?</strong></p>
-
-  <%= form_for graphs_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
-  <fieldset>
-    <div class="control-group">
-      <label class="control-label">Name</label>
-      <div class="controls"><p><%= $g{name} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Description</label>
-      <div class="controls"><p><%= $g{desc} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Query</label>
-      <div class="controls"><pre><%= $g{query} %></pre></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Probes</label>
-      <div class="controls"><p><%= $g{probes} %></p></div>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Owner</label>
-      <div class="controls"><p><%= $g{owner} %></p></div>
-    </div>
-  </fieldset>
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary" name="remove">Remove</button>
-    <button type="submit" class="btn" name="cancel">Cancel</button>
+  <div class="btn-group pull-right">
+    <%= link_to graphs_show => { id => $id } => (class => "btn") => begin %>Back to details<% end %>  
+    <%= link_to graphs_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to graphs_add => (class => "btn") => begin %>New graph<% end %>
   </div>
-  <% end %>
+
+  <div class="box-content">
+    <p>Reports using this graph will be updated. <strong>Are you sure you want to remove this graph?</strong></p>
+
+    <%= form_for graphs_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <div class="control-group">
+	<label class="control-label">Name</label>
+	<div class="controls"><p><%= $g{name} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Description</label>
+	<div class="controls"><p><%= $g{desc} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Query</label>
+	<div class="controls"><pre><%= $g{query} %></pre></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Probes</label>
+	<div class="controls"><p><%= $g{probes} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Owner</label>
+	<div class="controls"><p><%= $g{owner} %></p></div>
+      </div>
+    </fieldset>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" name="remove">Remove</button>
+      <button type="submit" class="btn" name="cancel">Cancel</button>
+    </div>
+    <% end %>
+  </div>
 </div>

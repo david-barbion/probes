@@ -1,9 +1,0 @@
-% layout 'default';
-<div class="page-header">
-  <h1>Welcome to Probes <small>a graphing and reporting app for PostgreSQL Database analysis</small></h1>
-</div>
-
-<div class="row">
-  <%= link_to users_register => (class => 'btn-large btn-primary span3 offset3') => begin %>Create an account<% end %>
-  <%= link_to users_login => (class => 'btn-large btn-info span3') => begin %>Log in<% end %>
-</div>

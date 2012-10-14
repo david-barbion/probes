@@ -1,3 +1,42 @@
+body {
+    background-color: #fdfdfd;
+    padding-top: 60px;
+}
+
+/* Box
+-------------------------------------------------- */
+.box {
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    padding: 10px 15px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.box h2 {
+    margin-top: 0;
+    font-size: 25px;
+}
+
+.box-content {
+    clear: both;
+    padding-top: 30px;
+}
+
+/* Tables for key value descriptions
+-------------------------------------------------- */
+.table-desc th,
+.table-desc td {
+    border-top: 0;
+}
+
+.table-desc tbody tr:nth-child(odd) td,
+.table-desc tbody tr:nth-child(odd) th {
+  background-color: #f9f9fd;
+}
+
 /* Upload
 -------------------------------------------------- */
 .after {

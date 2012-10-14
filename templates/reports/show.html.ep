@@ -1,45 +1,45 @@
 % layout 'default';
 % my @graphs = @{stash 'graphs'};
-<h2>Report</h2>
+<div class="box">
+  <h2>Report</h2>
 
-<div class="btn-group pull-right">
-  <%= link_to reports_list => (class => "btn") => begin %>Back to list<% end %>
-  <%= link_to reports_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>
-  <%= link_to reports_remove => { id => $id } => (class => "btn") => begin %>Remove<% end %>
-</div>
+  <div class="btn-group pull-right">
+    <%= link_to reports_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to reports_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>
+    <%= link_to reports_remove => { id => $id } => (class => "btn") => begin %>Remove<% end %>
+  </div>
 
-<div style="clear: both;"></div>
+  <div class="box-content">
+    % if (scalar(@{$graphs})) {
+    %     foreach my $g (@graphs) {
+    %         my %graph = %{$g};
+    <div id="graph">
+      <h3><%= $graph{name} %></h3>
 
-<div style="margin-top: 30px;">
-% if (scalar(@{$graphs})) {
-%     foreach my $g (@graphs) {
-%         my %graph = %{$g};
-  <div id="graph">
-    <h3><%= $graph{name} %></h3>
+      <div id="gbut<%= $graph{id} %>" class="btn-group pull-right">
+	<%= link_to graphs_edit => { id => $graph{id} } => (class => "btn btn-mini") => begin %>Edit<% end %>
+      </div>
 
-    <div id="gbut<%= $graph{id} %>" class="btn-group pull-right">
-      <%= link_to graphs_edit => { id => $graph{id} } => (class => "btn btn-mini") => begin %>Edit<% end %>
+      <div id="gbox<%= $graph{id} %>"></div>
+
+      <script type="text/javascript">
+	$(document).ready(function () {
+	  $("#gbox<%= $graph{id} %>").probe({
+            options: <%== $graph{options}%>,
+            data: {
+              namespace: "<%= $graph{nsp} %>",
+              id: <%= $graph{id} %>
+            },
+            title: "<%= $graph{name} %>",
+            desc: "<%= $graph{desc} %>"
+	  });
+	});
+      </script>
     </div>
-
-    <div id="gbox<%= $graph{id} %>"></div>
-
-    <script type="text/javascript">
-    $(document).ready(function () {
-      $("#gbox<%= $graph{id} %>").probe({
-          options: <%== $graph{options}%>,
-          data: {
-            namespace: "<%= $graph{nsp} %>",
-            id: <%= $graph{id} %>
-          },
-          title: "<%= $graph{name} %>",
-          desc: "<%= $graph{desc} %>"
-      });
-    });
-    </script>
+    %     }
   </div>
-%     }
-  </div>
-% } else {
+  % } else {
   <p>No graphs found</p>
-% }
+  % }
+</div>
 </div>
