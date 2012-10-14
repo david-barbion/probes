@@ -27,8 +27,8 @@
 	<td><%= $line{graphs} %></td>
 	<td><%= $line{owner} %></td>
 	<td>
-	  <%= link_to reports_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %>
-	  <%= link_to reports_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %>
+	  <%= link_to reports_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
+	  <%= link_to reports_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
 	</td>
 
       </tr>

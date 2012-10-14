@@ -17,7 +17,7 @@
 	<th>Maximum version</th>
 	<th>Type</th>
 	<th>Owner</th>
-	<th>&nbsp;</th>
+	<th>Status</th>
 	<th>&nbsp;</th>
       </tr>
       <% foreach my $p (@probes) { %>
@@ -29,8 +29,11 @@
 	<td><%= $line{max_version} %></td>
 	<td><%= $line{type} %></td>
 	<td><%= $line{owner} %></td>
-	<td><%= link_to probes_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %></td>
 	<td><% unless ($line{enabled}) { %>Disabled<% } else { %>&nbsp;<% } %></td>
+	<td>
+	  <%= link_to probes_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
+	  <%= link_to probes_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
+	</td>
       </tr>
       <% } %>
     </table>

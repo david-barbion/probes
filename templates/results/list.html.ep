@@ -29,7 +29,7 @@
 	<td><%= $line{desc} %></td>
 	<td><%= $line{upload} %></td>
 	<td><%= $line{owner} %></td>
-	<td><%= link_to results_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Remove<% end %></td>
+	<td><%= link_to results_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %></td>
       </tr>
       <% } %>
     </table>

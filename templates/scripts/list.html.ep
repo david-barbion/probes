@@ -23,9 +23,9 @@
 	<td><%= $line{desc} %></td>
 	<td><%= $line{owner} %></td>
 	<td>
-	  <%= link_to scripts_download => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Download<% end %>
-	  <%= link_to scripts_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Edit<% end %>
-	  <%= link_to scripts_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %>Delete<% end %>
+	  <%= link_to scripts_download => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-download hide-text">Download</i><% end %>
+	  <%= link_to scripts_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
+	  <%= link_to scripts_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
 	</td>
       </tr>
       <% } %>
