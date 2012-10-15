@@ -445,7 +445,6 @@ FROM plot_options po
 	$self->param('graph_desc', $d);
 	$self->param('query', $q);
 	$self->param('filter_query', $fq);
-	say Dumper($p);
 	$self->param('probe', $p) if (defined $p);
 	$self->param('graph-type', $options->{'graph-type'});
 	foreach my $o ('stacked', 'filled', 'show-legend') {
