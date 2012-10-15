@@ -7,10 +7,10 @@ use Probe::Collector;
 sub list {
     my $self = shift;
 
-    # Require admin privileges
-    if (! $self->perm->is_admin) {
-	return $self->render('unauthorized', status => 401);
-    }
+    # # Require admin privileges
+    # if (! $self->perm->is_admin) {
+    # 	return $self->render('unauthorized', status => 401);
+    # }
 
     my $dbh = $self->database;
 
@@ -96,10 +96,10 @@ ORDER BY r.upload_time DESC});
 sub upload {
     my $self = shift;
 
-    # Require admin privileges
-    if (! $self->perm->is_admin) {
-	return $self->render('unauthorized', status => 401);
-    }
+    # # Require admin privileges
+    # if (! $self->perm->is_admin) {
+    # 	return $self->render('unauthorized', status => 401);
+    # }
 
     my $method = $self->req->method;
     if ($method =~ m/^POST$/i) {
