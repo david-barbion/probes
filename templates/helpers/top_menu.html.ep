@@ -5,12 +5,14 @@
   % } elsif ($user_level eq "user" ) {
   <li <% if ($cr eq "site_home") { %>class="active"<% } %>><%= link_to site_home  => begin %>Home<% end %></li>
   <li <% if ($cr =~ m!^scripts_!) { %>class="active"<% } %>><%= link_to scripts_list => begin %>Scripts<% end %></li>
-  <li <% if ($cr =~ m!^results_!) { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
+  <li <% if ($cr eq "results_upload") { %>class="active"<% } %>><%= link_to results_upload => begin %>Upload<% end %></li>
+  <li <% if ($cr =~ m!^results_! && $cr ne "results_upload") { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
   <li <% if ($cr =~ m!^reports_!) { %>class="active"<% } %>><%= link_to reports_list => begin %>Reports<% end %></li>
   % } elsif ($user_level eq "admin") {
   <li <% if ($cr eq "site_home") { %>class="active"<% } %>><%= link_to site_home  => begin %>Home<% end %></li>
   <li <% if ($cr =~ m!^scripts_!) { %>class="active"<% } %>><%= link_to scripts_list => begin %>Scripts<% end %></li>
-  <li <% if ($cr =~ m!^results_!) { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
+  <li <% if ($cr eq "results_upload") { %>class="active"<% } %>><%= link_to results_upload => begin %>Upload<% end %></li>
+  <li <% if ($cr =~ m!^results_! && $cr ne "results_upload") { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
   <li <% if ($cr =~ m!^reports_!) { %>class="active"<% } %>><%= link_to reports_list => begin %>Reports<% end %></li>
   <li <% if ($cr =~ m!^probes_!) { %>class="active"<% } %>><%= link_to probes_list => begin %>Probes<% end %></li>
   <li <% if ($cr =~ m!^graphs_!) { %>class="active"<% } %>><%= link_to graphs_list => begin %>Graphs<% end %></li>

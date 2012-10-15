@@ -51,17 +51,15 @@
       <%= content %>
     </div>
 
-    <div class="container">
-      <div class="footer">
-
-<!--	<div class="pull-right">
+    <div class="footer">
+      <div class="container">
+	<div class="pull-right">
 	  <a href="https://twitter.com/dalibo" class="twitter-follow-button" data-show-count="false">Follow @dalibo</a>
           <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
 	</div>
--->
 
 	<p>Powered by <a href="http://www.mojolicious.org" title="mojolicious web framework">Mojolicious</a></p>
-	<p>Designed based on <a href="http://twitter.github.com/bootstrap/" title="bootstrap">Bootstrap</a></p>
+	<p>Design based on <a href="http://twitter.github.com/bootstrap/" title="bootstrap">Bootstrap</a></p>
 
       </div>
     </div>
