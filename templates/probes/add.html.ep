@@ -58,8 +58,8 @@
 	<label class="control-label" for="preload">Preload command:</label>
 	<div class="controls">
 	  <%= text_area preload => (rows => 5, id => 'preload', class => 'span6') => begin %><% end %>
-	  <p class="help-block">Specify the command to transform the into CSV suitable for COPY.
-	    The placeholder %f can be used to specify the input file name in the command</p>
+	  <p class="help-block">Specify the command to transform the data into CSV suitable for COPY.
+	    The placeholder %f can be used to specify the name of the input file in the command</p>
 	</div>
       </div>
 

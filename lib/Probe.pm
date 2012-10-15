@@ -6,20 +6,20 @@ sub startup {
     my $self = shift;
 
     # register Helpers plugins namespace
-    $self->plugins->namespaces( [ "Helpers", @{ $self->plugins->namespaces } ] );
+    $self->plugins->namespaces([ "Helpers", @{ $self->plugins->namespaces } ]);
 
     # setup charset
     $self->plugin( charset => { charset => 'utf8' } );
 
     # load configuration
     my $config_file = $self->home.'/probe.conf';
-    my $config = $self->plugin( 'JSONConfig' => { file => $config_file });
+    my $config = $self->plugin('JSONConfig' => { file => $config_file });
 
     # setup secret passphrase XXX
-    $self->secret( $config->{secret} || 'Xwyfe-_d:yGDr+p][Vs7Kk+e3mmP=c_|s7hvExF=b|4r4^gO|' );
+    $self->secret($config->{secret} || 'Xwyfe-_d:yGDr+p][Vs7Kk+e3mmP=c_|s7hvExF=b|4r4^gO|');
 
     # startup database connection
-    $self->plugin( 'database', $config->{ database } || {} );
+    $self->plugin('database', $config->{ database } || {} );
 
     # Load HTML Messaging plugin
     $self->plugin('messages');
@@ -28,18 +28,15 @@ sub startup {
 
     $self->plugin('permissions');
 
-    # Documentation browser under "/perldoc" (this plugin requires Perl 5.10)
-    $self->plugin('PODRenderer');
-
     # Add a perl mime type for the script generation
     $self->types->type(pl => 'application/x-perl');
 
     # CGI pretty URLs
     if ($config->{rewrite}) {
-	$self->hook( before_dispatch => sub {
-			 my $self = shift;
-			 $self->req->url->base(Mojo::URL->new($config->{base_url}));
-		     });
+	$self->hook(before_dispatch => sub {
+			my $self = shift;
+			$self->req->url->base(Mojo::URL->new($config->{base_url}));
+		    });
     }
 
     # Routes
@@ -56,18 +53,16 @@ sub startup {
     $r->route('/register')  ->to('users#register')  ->name('users_register');
     $ra->route('/profile')  ->to('users#profile')   ->name('users_profile');
 
-    # Admin
-    # Users
-    # Permissions
+    # Users management
     $ra->route('/users')                           ->to('users#list')   ->name('users_list');
     $ra->route('/users/add')                       ->to('users#add')    ->name('users_add');
     $ra->route('/users/:id/edit', id => qr/\d+/)   ->to('users#edit')   ->name('users_edit');
     $ra->route('/users/:id/remove', id => qr/\d+/) ->to('users#remove') ->name('users_remove');
 
     # Results management
-    $ra->route('/results')                           ->to('results#list')   ->name('results_list'); # a table with all results available to the user
+    $ra->route('/results')                           ->to('results#list')   ->name('results_list');
     $ra->route('/results/upload')                    ->to('results#upload') ->name('results_upload');
-    $ra->route('/results/:id', id => qr/\d+/)        ->to('results#show')   ->name('results_show'); # the info on the results + linked reports + linked graphs
+    $ra->route('/results/:id', id => qr/\d+/)        ->to('results#show')   ->name('results_show');
     $ra->route('/results/:id/remove', id => qr/\d+/) ->to('results#remove') ->name('results_remove');
 
     # Script management
@@ -78,7 +73,7 @@ sub startup {
     $ra->route('/scripts/:id/remove', id => qr/\d+/) ->to('scripts#remove') ->name('scripts_remove');
     $ra->route('/scripts/:id/get', id => qr/\d+/)    ->to('scripts#download')->name('scripts_download');
 
-    # Probe management (Probe::Probes)
+    # Probe management
     $ra->route('/probes')                           ->to('probes#list')   ->name('probes_list');
     $ra->route('/probes/add')                       ->to('probes#add')    ->name('probes_add');
     $ra->route('/probes/:id', id => qr/\d+/)        ->to('probes#show')   ->name('probes_show');

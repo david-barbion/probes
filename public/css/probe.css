@@ -112,8 +112,12 @@ body {
 }
 
 /* Other
-*/
+--------------------------------------------------- */
 .help-block {
     font-size: 12px;
     font-style: italic;
+}
+
+.strong {
+    font-weight: bold;
 }
