@@ -1,102 +1,158 @@
 % layout 'default';
-% my @sets = @{stash 'sets'};
-<ul id="steptabs" class="nav nav-tabs">
-  <li class="active"><a href="#reports" data-toggle="tab"><strong>Reports</strong></a></li>
-  <li><a href="#scripts" data-toggle="tab"><strong>Scripts</strong></a></li>
-  <li><a href="#upload" data-toggle="tab"><strong>Upload</strong></a></li>
-</ul>
+% my @results = @{stash 'results'};
+% my @scripts = @{stash 'scripts'};
+% my @reports = @{stash 'reports'};
+<div class="row">
+  <div class="span6">
+    <div class="box">
+      <div class="btn-group pull-right">
+	<%= link_to scripts_list => (class => "btn btn-small") => begin %>More<% end %>
+      </div>
 
-<div id="steptabscontents" class="tab-content">
-  <div class="tab-pane active" id="reports">
-    <div class="page-header">
-      <h1>Reports <small>linking to graphs</small></h1>
-    </div>
+      <h2>Scripts</h2>
 
-    <table class="table table-striped">
-      <thead>
-	<tr>
-	  <th>Name</th><th>Description</th><th>&nbsp;</th>
-	</tr>
-      </thead>
-      <tbody>
-	<% foreach my $p (@sets) { %>
-	<%     my %line = %{$p}; %>
-	<tr>
-	  <td><%= link_to draw_list => { nsp => 'data_'.$line{id} } => begin %><%= $line{set} %><% end %></td>
-	  <td><%= $line{desc} %></td>
-	  <td><%= link_to remove => { id => $line{id} } => begin %>remove<% end %></td>
-	</tr>
+      <div class="box-content">
+	<% if (scalar(@scripts)) { %>
+	<table class="table table-striped">
+	  <tr>
+	    <th>Name</th>
+	    <th>Description</th>
+	    <th>&nbsp;</th>
+	  </tr>
+	  <% foreach my $s (@scripts) { %>
+	  <%     my %sl = %{$s}; %>
+	  <tr>
+	    <td><%= link_to scripts_show => { id => $sl{id} } => begin %><%= $sl{name} %><% end %></td>
+	    <td><%= $sl{desc} %></td>
+	    <td><%= link_to scripts_download => { id => $sl{id} } => (class => 'btn btn-small') => begin %><i class="icon-download hide-text">Download</i><% end %></td>
+	  </tr>
+	  <% } %>
+	</table>
+	<% } else { %>
+	<p>No script found</p>
 	<% } %>
-      </tbody>
-    </table>
-  </div>
-
-  <div id="scripts" class="tab-pane">
-    <div class="page-header">
-      <h1>Scripts <small>to gather data on your server</small></h1>
-    </div>
-    
-    <button class="btn">PostgreSQL Only</button>
-    <button class="btn">PostgreSQL and Sysstat</button>
-  </div>
-
-  <div id="upload" class="tab-pane">
-    <div class="page-header">
-      <h1>Upload <small>the results</small></h1>
+      </div>
     </div>
 
-    <%= form_for results_upload => (enctype => 'multipart/form-data', method => 'POST', id => 'fileupload', class => 'form-horizontal') => begin %>
-      <fieldset>
-        <div class="control-group">
-	  <label class="control-label" for="input01">Custom name</label>
-	  <div class="controls">
-	    <input type="text" class="input-xxlarge" name="name">
-	    <p class="help-block">Override the name of the probe run found in the archive.</p>
-	  </div>
-        </div>
+    <div id="upload" class="box">
+      <h2>Upload</h2>
 
-	<div class="control-group">
-	  <label class="control-label" for="textarea">Custom description</label>
-	  <div class="controls">
-	    <textarea class="input-xxlarge" rows="3" name="desc"></textarea>
-	    <p class="help-block">Override the description of the probe run found in the archive.</p>
-	  </div>
-        </div>
-	
-	<div class="control-group">
-	  <label class="control-label" for="fileInput">Archive</label>
-	  <div class="controls">
-	    <input class="input-file input-xxlarge" id="fileInput" type="file" name="tarball">
-	    <p class="help-block">Choose the archive file to upload</p>
-	  </div>
-        </div>
+      <div class="box-content">
+	<%= form_for results_upload => (enctype => 'multipart/form-data', method => 'POST', id => 'fileupload', class => 'form-horizontal') => begin %>
+	<fieldset>
+          <div class="control-group">
+	    <label class="control-label" for="input01">Custom name</label>
+	    <div class="controls">
+	      <input type="text" name="name">
+	      <p class="help-block">Override the name of the probe run found in the archive.</p>
+	    </div>
+          </div>
 
-      </fieldset>
+	  <div class="control-group">
+	    <label class="control-label" for="textarea">Custom description</label>
+	    <div class="controls">
+	      <textarea rows="3" name="desc"></textarea>
+	      <p class="help-block">Override the description of the probe run found in the archive.</p>
+	    </div>
+          </div>
+	  
+	  <div class="control-group">
+	    <label class="control-label" for="fileInput">Archive</label>
+	    <div class="controls">
+	      <input class="input-file input-xxlarge" id="fileInput" type="file" name="tarball">
+	      <p class="help-block">Choose the archive file to upload</p>
+	    </div>
+          </div>
+
+	</fieldset>
       
-      <div class="form-actions">
-	<button type="submit" class="btn btn-primary">Upload</button>
-      </div>
-    <% end %>
+	<div class="form-actions">
+	  <button type="submit" class="btn btn-primary">Upload</button>
+	</div>
+	<% end %>
 
-    <div id="upload-status">
+	<div id="upload-status">
+	  
+	  <div class="status"></div>
 
-      <div class="status"></div>
+	  <dl class="dl-horizontal">
+	    <dt>Name</dt><dd></dd>
+	    <dt>Description</dt><dd></dd>
+	    <dt>Progress</dt><dd><div class="progress"><div class="bar"></div></div>
+	  </dl>
 
-      <dl class="dl-horizontal">
-	<dt>Name</dt><dd></dd>
-	<dt>Description</dt><dd></dd>
-	<dt>Progress</dt><dd><div class="progress"><div class="bar"></div></div>
-      </dl>
-
-      <div class="after form-actions">
-	<a href="<%= url_for '/' %>" class="btn btn-primary">Continue</a>
-	<button type="button" class="btn reset">Upload another file</button>
+	  <div class="after form-actions">
+	    <a href="<%= url_for '/' %>" class="btn btn-primary">Continue</a>
+	    <button type="button" class="btn reset">Upload another file</button>
+	  </div>
+	</div>
       </div>
     </div>
+
+  </div>
+
+  <div class="span6">
+    <div class="box">
+      <div class="btn-group pull-right">
+	<%= link_to results_list => (class => "btn btn-small") => begin %>More<% end %>
+      </div>
+
+      <h2>Data</h2>
+
+      <div class="box-content">
+	<% if (scalar(@results)) { %>
+	<table class="table table-striped">
+	  <tr>
+            <th>Name</th>
+	    <th>Description</th>
+	  </tr>
+	  <% foreach my $r (@results) { %>
+	  <%     my %rs = %{$r}; %>
+	  <tr>
+            <td><%= link_to results_show => { id => $rs{id} } => begin %><%= $rs{set} %><% end %></td>
+            <td><%= $rs{desc} %></td>
+	  </tr>
+	  <% } %>
+	</table>
+	<% } else { %>
+	<p>No data found</p>
+	<% } %>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="btn-group pull-right">
+	<%= link_to reports_list => (class => "btn btn-small") => begin %>More<% end %>
+      </div>
+
+      <h2>Reports</h2>
+
+      <div class="box-content">
+	<% if (scalar(@reports)) { %>
+	<table class="table table-striped">
+	  <tr>
+            <th>Name</th>
+	    <th>Description</th>
+	    <th>Graphs</th>
+	  </tr>
+	  <% foreach my $r (@reports) { %>
+	  <%     my %rp = %{$r}; %>
+	  <tr>
+            <td><%= link_to reports_show => { id => $rp{id} } => begin %><%= $rp{name} %><% end %></td>
+            <td><%= $rp{desc} %></td>
+	    <td><%== $rp{graphs} %></td>
+	  </tr>
+	  <% } %>
+	</table>
+	<% } else { %>
+	<p>No report found</p>
+	<% } %>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script type="text/javascript" src="<%= url_for '/' %>js/jquery.form.js"></script>
 <script type="text/javascript" src="<%= url_for '/' %>js/upload.js"></script>
-
 
