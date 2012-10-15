@@ -9,7 +9,7 @@ that lets you graph timed data stored inside a PostgreSQL database.
 
 It can generate scripts to collect the activity data on a PostgreSQL
 machine (SQL, sysstat), the tarball can then be uploaded to the web
-UI, display the data as graphs.
+UI, to display the data as graphs.
 
 The purpose of Probe is have a set of predefined probes (data
 gathering commands) and graphs to quickly show the activity on the
@@ -21,7 +21,7 @@ Prerequisites
 The versions showed have been tested, it may work with older versions
 
 * Perl 5.10
-* Mojolicious 2.57
+* Mojolicious 2.98
 * PostgreSQL 9.0
 * A CGI/Perl webserver
 
