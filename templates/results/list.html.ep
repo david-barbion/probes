@@ -12,7 +12,7 @@
   <div id="results" style="margin-top: 30px;">
     <% if (scalar(@results)) { %>
     <%= form_for results_list => (method => 'POST') => begin %>
-    <table class="table table-condensed table-striped">
+    <table class="table table-hover table-striped">
       <tr>
 	<th><i class="icon-check" id="chkall"></i></th>
 	<th>Name</th>
@@ -29,7 +29,10 @@
 	<td><%= $line{desc} %></td>
 	<td><%= $line{upload} %></td>
 	<td><%= $line{owner} %></td>
-	<td><%= link_to results_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %></td>
+	<td class="span2">
+	  <%= link_to url_for('reports_add')->query(result => $line{id}) => ( class => "btn btn-mini" ) => begin %><i class="icon-picture hide-text">Report</i><% end %>
+	  <%= link_to results_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
+	</td>
       </tr>
       <% } %>
     </table>

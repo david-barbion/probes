@@ -302,12 +302,7 @@ WHERE id = ?});
 	    $rb = 1 unless defined $sth->execute($id);
 	    $sth->finish;
 
-	    my @g;
-	    if (ref $form_data->{selection} eq '') {
-		@g = ($form_data->{selection});
-	    } else {
-		@g = @{$form_data->{selection}};
-	    }
+	    my @g = (ref $form_data->{selection} eq '') ? ($form_data->{selection}) : @{$form_data->{selection}};
 
 	    $sth = $dbh->prepare(qq{INSERT INTO report_contents (id_report, id_result, id_graph) VALUES (?, ?, ?)});
 	    foreach my $graph (@g) {

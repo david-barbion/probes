@@ -15,19 +15,25 @@ sub register {
 		     my $html;
 
 		     if (@{$self->msg_lists->{debug}}) {
-			 $html .= qq{<div class="alert alert-info"><ul class="unstyled">\n};
+			 $html .= qq{<div class="alert fade in  alert-info">\n};
+			 $html .= qq{<button type="button" class="close" data-dismiss="alert">&times;</button>\n};
+			 $html .= qq{<ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{debug}});
 			 $html .= qq{</ul></div>};
 		     }
 
 		     if (@{$self->msg_lists->{error}}) {
-			 $html .= qq{<div class="alert alert-error"><ul class="unstyled">\n};
+			 $html .= qq{<div class="alert fade in  alert-error">};
+			 $html .= qq{<button type="button" class="close" data-dismiss="alert">&times;</button>\n};
+			 $html .= qq{<ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{error}});
 			 $html .= qq{</ul>};
 		     }
 
 		     if (@{$self->msg_lists->{info}}) {
-			 $html .= qq{<div class="alert alert-success"><ul class="unstyled">\n};
+			 $html .= qq{<div class="alert fade in alert-success">};
+			 $html .= qq{<button type="button" class="close" data-dismiss="alert">&times;</button>\n};
+			 $html .= qq{<ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{info}});
 			 $html .= qq{</ul>};
 		     }

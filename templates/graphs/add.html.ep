@@ -43,7 +43,7 @@
 	<div class="control-group">
 	  <label class="control-label">Probe:</label>
 	  <div class="controls">
-	    <%= select_field probe => $probes %>
+	    <%= select_field probe => $probes, multiple => 'multiple' %>
 	    <span class="help-block">Link the graph to a probe to make it available in the default report</span>
 	  </div>
 	</div>

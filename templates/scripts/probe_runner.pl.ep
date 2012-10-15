@@ -299,7 +299,6 @@ sub pack_archive {
 	    # run the preload command
 	    my $pc = $c->{preload};
 	    $pc =~ s!\%f!$dir/sa!g;
-	    logger "$pc > ${dir}/$c->{output}";
 	    system("$pc > ${dir}/$c->{output}");
 	}
     }

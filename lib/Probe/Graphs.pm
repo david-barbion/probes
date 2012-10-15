@@ -157,11 +157,19 @@ VALUES (?, ?, ?)});
 	    }
 	    $sth->finish;
 
-	    # Link to the probe if asked
-	    if ($form_data->{probe} ne '') {
+	    # Link to the probes if asked
+	    if (exists $form_data->{probe}) {
+		my @p;
+		if (ref $form_data->{probe} eq '') {
+		    @p = ($form_data->{probe});
+		} else {
+		    @p = @{$form_data->{probe}};
+		}
+
 		$sth = $dbh->prepare(qq{INSERT INTO probe_graphs (id_graph, id_probe) VALUES (?, ?)});
-		$rb = 1 unless defined $sth->execute($id,
-						     $form_data->{probe});
+		foreach my $probe (@p) {
+		    $rb = 1 unless defined $sth->execute($id, $probe);
+		}
 		$sth->finish;
 	    }
 
@@ -192,7 +200,7 @@ VALUES (?, ?, ?)});
     $sth = $dbh->prepare(qq{SELECT id, probe_name, min_version, max_version FROM probes ORDER BY probe_name});
     $sth->execute();
 
-    my $probes = [ '' ];
+    my $probes = [ ];
     while (my ($i, $n, $iv, $av) = $sth->fetchrow()) {
 	$iv = "any" unless defined $iv;
 	$av = "any" unless defined $av;
@@ -339,9 +347,19 @@ FROM plot_options po
 	    $rb = 1 unless defined $sth->execute($id);
 	    $sth->finish;
 
-	    if ($form_data->{probe} ne '') {
+	    if (exists $form_data->{probe}) {
+		my @p;
+		if (ref $form_data->{probe} eq '') {
+		    @p = ($form_data->{probe});
+		} else {
+		    @p = @{$form_data->{probe}};
+		}
+
 		$sth = $dbh->prepare(qq{INSERT INTO probe_graphs (id_graph, id_probe) VALUES (?, ?)});
-		$rb = 1 unless defined $sth->execute($id, $form_data->{probe});
+		foreach my $probe (@p) {
+		    $rb = 1 unless defined $sth->execute($id, $probe);
+		}
+		$sth->finish;
 	    }
 
 	    if ($rb) {
@@ -373,14 +391,11 @@ GROUP BY g.graph_name, g.description, g.query, g.filter_query});
 	return $self->render_not_found;
     }
 
-    # Only allow a link to one probe
-    $p = shift @{$p};
-
     # Probes with selection, to pre-fill the select
     $sth = $dbh->prepare(qq{SELECT id, probe_name, min_version, max_version FROM probes ORDER BY probe_name});
     $sth->execute();
 
-    my $probes = [ '' ];
+    my $probes = [ ];
     while (my ($i, $n, $iv, $av) = $sth->fetchrow()) {
 	$iv = "any" unless defined $iv;
 	$av = "any" unless defined $av;
@@ -430,6 +445,7 @@ FROM plot_options po
 	$self->param('graph_desc', $d);
 	$self->param('query', $q);
 	$self->param('filter_query', $fq);
+	say Dumper($p);
 	$self->param('probe', $p) if (defined $p);
 	$self->param('graph-type', $options->{'graph-type'});
 	foreach my $o ('stacked', 'filled', 'show-legend') {

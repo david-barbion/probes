@@ -9,7 +9,7 @@
 
   <div id="users" class="box-content">
     <% if (scalar(@users)) { %>
-    <table class="table table-condensed table-striped">
+    <table class="table table-hover table-striped">
       <tr>
 	<th>Username</th>
 	<th>E-mail</th>
@@ -26,7 +26,7 @@
 	<td><%= $line{fname} %> <%= $line{lname} %></td>
 	<td><% if ($line{admin}) { %>Yes<% } %></td>
 	<td><%= $line{uploads} %></td>
-	<td>
+	<td class="span2">
 	  <%= link_to users_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
 	  <%= link_to users_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
 	</td>

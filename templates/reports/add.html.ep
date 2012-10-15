@@ -77,6 +77,9 @@ $(document).ready(function() {
         if (data[$("select[name=result]").val()].indexOf(x) < 0) {
           // disable graphs not available for the result
           $("#graphs").find('input[name=selection][value='+ x +']').prop("disabled", true);
+        } else {
+          // preselect available graphs
+          $("#graphs").find('input[name=selection][value='+ x +']').prop("checked", true);
         }
       })
     }

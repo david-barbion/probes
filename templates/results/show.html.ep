@@ -6,8 +6,10 @@
 
   <div class="btn-group pull-right">
     <%= link_to results_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to url_for('reports_add')->query(result => $id) => (class => "btn") => begin %>Create report<% end %>
     <%= link_to results_upload => (class => "btn") => begin %>Upload<% end %>
     <%= link_to results_remove => { id => $id } => (class => "btn") => begin %>Remove<% end %>
+
   </div>
 
   <div class="box-content">

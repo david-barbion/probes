@@ -9,7 +9,7 @@
 
   <div id="probes" class="box-content">
     <% if (scalar(@reports)) { %>
-    <table class="table table-condensed table-striped">
+    <table class="table table-hover table-striped">
       <tr>
 	<th>Report</th>
 	<th>Description</th>
@@ -24,9 +24,9 @@
 	<td><%= link_to reports_show => { id => $line{id} } => begin %><%= $line{name} %><% end %></td>
 	<td><%= $line{desc} %></td>
 	<td><%= $line{results} %></td>
-	<td><%= $line{graphs} %></td>
+	<td class="span5"><%= $line{graphs} %></td>
 	<td><%= $line{owner} %></td>
-	<td>
+	<td class="span2">
 	  <%= link_to reports_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
 	  <%= link_to reports_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
 	</td>
