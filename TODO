@@ -1,13 +1,15 @@
 ==== everything ====
 
-- check db error, at least for writes and query run on user input
 - add messages where needed
 - add breadcrumbs ? or page tree path ?
 
-==== graphs ====
+==== reports ====
 
 - show/hide series ?
 - TOC
+
+==== graphs ====
+
 - clone graphs
 
 ==== probe ====
@@ -23,9 +25,9 @@
 ==== css ====
 
 - use red for remove buttons
-- missing stuff from bootstrap
 
 ==== users ====
 
-- add the admin pages
-- create a new home page with login form
+- implement groups
+- implement permissions
+- filter data on the owner and groups
