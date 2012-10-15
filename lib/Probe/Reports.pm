@@ -463,9 +463,10 @@ GROUP BY r.id, r.report_name, r.description, u.username});
     my ($i, $n, $d, $r, $g, $o) = $sth->fetchrow;
     $sth->finish;
 
+    $dbh->commit;
+    $dbh->disconnect;
+
     if (! defined $i) {
-	$dbh->commit;
-	$dbh->disconnect;
 	return $self->render_not_found;
     }
 
