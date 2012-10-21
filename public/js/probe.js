@@ -1,40 +1,15 @@
 /*
-definition du plugin jquery pour pg_probe
-- doit pouvoir afficher un graph en mode show ou add/edit
-- merger auditools.js et probe.js
-
-functions:
-- init
-- create des zones de graphs avec les header footer
-- maj/création des options
-- recup des data en ajax
-- selection
-- affichage du graph
-
-
-utilisation:
-- il faut une div pour les graphs, on se branche dessus
-{ save: selector,
-  controls: selector,
-  trigger: selector,
-  header: {
-    single: 'html',
-    multiple: 'html'
-  },
-  footer: {
-    single: 'html',
-    multiple: 'html' },
-  data: { id: x, namespace: 'y' }
-}
-  
-*/
-
+ * probe.js -- JQuery Plugin to draw graphs using Flotr2 and ajax to
+ * get the data
+ */
 
 (function($) {
   $.fn.probe = function(options) {
     var defaults = {
       controls: null, // element storing the controls to modify the flotr2 options
-      saveButton: null, // a link/button for saving the graph as an image, will be disabled in multi graphs
+      saveDiv: null, // parent element for a link/button for saving
+		     // the graph as an image, only the first save
+		     // button is put there
       drawButton: null, // a link/button to draw the graph, if null draw right away
       data: {
 	namespace: null,
@@ -176,7 +151,7 @@ utilisation:
     }
 
     function drawAllGraphs() {
-      var i, c, o;
+      var i, c, o, s;
 
       // update the options
       updateGraphOptions();
@@ -187,19 +162,22 @@ utilisation:
       // Draw each graph
       for (i = 0; i < data.length; i++) {
 
+	// put the save button in the provided div, only for the first graph
+	s = (i == 0) ? true : false;
+
 	if (data[i].filters) {
-	  c = drawGraphArea(data[i].filters);
+	  c = drawGraphArea(data[i].filters, s);
 	  o = {};
 	  o['title'] = settings.options.title + ' ('+ data[i].filters.join(', ')+')';
 	} else {
-	  c = drawGraphArea(null);
+	  c = drawGraphArea(null, s);
 	}
 
 	drawGraph(c, data[i].series, o);
       }
     }
 
-    function drawGraphArea(filters) {
+    function drawGraphArea(filters, use_save_div) {
       // redraw all the graph placeholders when the filters query changes
       var i, area_id,
       container, save_link = null;
@@ -211,21 +189,47 @@ utilisation:
       }
 
       // Create graph box
-      zone.append('<div  id="'+area_id+'">'+
-		  '<div class="btn-group pull-right"><a href="#" class="btn btn-mini">Save</a></div>'+
-		  '<div class="graph_container">'+
-		  '<div class="graph"></div>'+
-		  '<div class="legend"></div>'+
-		  '</div>'+
-		  '</div>');
+      if (settings.saveDiv !== null) {
+	// When the target div for the save button is given, add the
+	// link to it only when asked
+	if (use_save_div === true) {
+	  $(settings.saveDiv).append('<a href="#" class="btn btn-mini">Save</a>');
 
-      container = zone.find('#'+area_id).find('.graph')
+	  zone.append('<div  id="'+area_id+'">'+
+		      ' <div class="graph_container">'+
+		      '  <div class="graph"></div>'+
+		      '  <div class="legend"></div>'+
+		      ' </div>'+
+		      '</div>');
+
+	} else {
+	  zone.append('<div  id="'+area_id+'">'+
+		      ' <div class="btn-group pull-right"><a href="#" class="btn btn-mini">Save</a></div>'+
+		      ' <div class="graph_container">'+
+		      '  <div class="graph"></div>'+
+		      '  <div class="legend"></div>'+
+		      ' </div>'+
+		      '</div>');
+	}
+      }
+
+      // Remember the container element
+      container = zone.find('#'+area_id).find('.graph');
+
+      // Choose the correct save button
+      if (settings.saveDiv !== null) {
+	if (use_save_div === true) {
+	  save_link = $(settings.saveDiv).find('a').filter(":last");
+	} else {
+	  save_link = zone.find('#'+area_id).find('a');
+	}
+      }
 
       // Prepare an empty list to remember zooms
       container.data('zooms', [ ]);
 
       return { container: container,
-	       save: zone.find('#'+area_id).find('a') };
+	       save: save_link };
     }
 
     function drawGraph(area, data, opts) {
@@ -239,7 +243,7 @@ utilisation:
       // Bind the save action
       area.save.click(function (event) {
 	event.preventDefault();
-	graph.download.saveImage('png');
+	graph.download.saveImage('png', null, null, false);
       });
 
       // Bind the selection
