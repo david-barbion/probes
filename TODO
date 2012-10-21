@@ -12,16 +12,19 @@
 ==== graphs ====
 
 - clone graphs
+- import/export
 
 ==== probe ====
 
 - clone probe
 - remove data and graphs from reports on deletion?
+- import/export
 
 ==== scripts ====
 
 - limit the time range of output to the run
 - add different modes: cron
+- automatic generation based on versions/type
 
 ==== css ====
 
@@ -32,3 +35,4 @@
 - implement groups
 - implement permissions
 - filter data on the owner and groups
+
