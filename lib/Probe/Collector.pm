@@ -7,7 +7,8 @@ use Data::Dumper;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT = qw(unpack_archive read_meta_file register_result_set load_csv_file);
+our @EXPORT = qw(unpack_archive read_meta_file register_result_set load_csv_file
+		 update_counter);
 
 
 our $dbh; # A connected handle to the DB
@@ -273,6 +274,21 @@ sub load_csv_file {
 
     return 1;
 }
+
+sub update_counter {
+    my $user_id = shift;
+
+    my $rc = 0;
+
+    return $rc unless defined $user_id;
+
+    my $sth = $dbh->prepare(qq{UPDATE users SET upload_count = upload_count + 1 WHERE id = ?});
+    $rc = 1 if defined $sth->execute($user_id);
+    $sth->finish;
+
+    return $rc;
+}
+
 
 sub clean {
     my ($tarball, $dir) = @_;

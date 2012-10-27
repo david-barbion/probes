@@ -122,7 +122,7 @@ sub upload {
 	}
 
 	# Prepare the workdir if needed
-	my $destdir = $self->app->config->{collector}->{watchdir};
+	my $destdir = $self->app->config->{upload}->{workdir};
 	system("mkdir -p $destdir");
 	if ($? >> 8) {
 	    return $self->render_json({ status => "error",
@@ -146,6 +146,7 @@ sub upload {
 	unless ($archive_dir = unpack_archive($archive, $destdir)) {
 	    $dbh->rollback;
 	    $dbh->disconnect;
+	    system("rm $archive");
 	    return $self->render_json({ status => "error",
 					message => "Unpack failed: ". $Probe::Collector::errstr });
 	}
@@ -154,10 +155,15 @@ sub upload {
 	unless ($meta_file = register_result_set($meta_file, $name, $desc, $self->session('user_id'))) {
 	    $dbh->rollback;
 	    $dbh->disconnect;
+	    system("rm $archive");
+	    system("rm -rf $archive_dir");
 	    return $self->render_json({ status => "error",
 					message => "Result set registration failed: ". $Probe::Collector::errstr });
 	}
 
+	# Load each CSV file into the target table in the new
+	# schema. load_csv_file() uses a savepoint and automatically
+	# rolls back to it when the copy fails
 	my @error = ();
 	foreach my $f (<$archive_dir/*/*.csv>) {
 	    unless (load_csv_file($meta_file, $f)) {
@@ -166,19 +172,25 @@ sub upload {
 	    }
 	}
 
+	# Cleaning
+	system("rm $archive");
+	system("rm -rf $archive_dir");
+
 	if (scalar(@error)) {
+	    $result = { status => "warning",
+			message => "Upload failed on: ".join(', ', @error) };
+	}
+
+	# Update the upload counter for the user when successful
+	unless (update_counter($self->session('user_id'))) {
 	    $dbh->rollback;
 	    $dbh->disconnect;
-	    $result = { status => "warning",
-			message => "Failed on: ".join(', ', @error) };
+	    return $self->render_json({ status => "error",
+					message => "Unable to update upload counter" });
 	}
 
 	$dbh->commit;
 	$dbh->disconnect;
-
-	# clean
-	system("rm $archive");
-	system("rm -rf $archive_dir");
 
 	return $self->render_json($result);
     }
