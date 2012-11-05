@@ -1,0 +1,37 @@
+% layout 'default';
+% my %g = %{stash 'group'};
+<div class="box">
+  <h2>Remove group</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to groups_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to groups_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>  
+    <%= link_to groups_add => (class => "btn") => begin %>New group<% end %>
+  </div>
+
+  <div class="box-content">
+    <p><strong>Are you sure you want to remove this group?</strong></p>
+
+    <%= form_for groups_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <div class="control-group">
+	<label class="control-label">Name:</label>
+	<div class="controls"><p><%= $g{name} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Description:</label>
+	<div class="controls"><p><%= $g{email} %></p></div>
+      </div>
+      <div class="control-group">
+	<label class="control-label">Members:</label>
+	<div class="controls"><p><%= $g{members} %></p></div>
+      </div>
+
+    </fieldset>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" name="remove">Remove</button>
+      <button type="submit" class="btn" name="cancel">Cancel</button>
+    </div>
+    <% end %>
+  </div>
+</div>

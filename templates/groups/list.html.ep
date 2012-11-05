@@ -1,0 +1,40 @@
+% layout 'default';
+% my @groups = @{stash 'groups'};
+<div class="box">
+  <h2>Groups</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to groups_add => (class => "btn") => begin %>New group<% end %>
+  </div>
+
+  <div id="groups" class="box-content">
+    <% if (scalar(@groups)) { %>
+    <table class="table table-hover table-striped">
+      <tr>
+	<th>Group</th>
+	<th>Description</th>
+	<th>Members</th>
+	<th>&nbsp;</th>
+      </tr>
+      <% foreach my $g (@groups) { %>
+      <%     my %line = %{$g}; %>
+      <tr>
+	<td><%= $line{name} %></td>
+	<td><%= $line{desc} %></td>
+	<td><% foreach my $m (keys %{$line{members}}) { %>
+	  <%= link_to users_edit => { id => $m } => begin %><%= $line{members}->{$m} %><% end %>
+	  <% } %>
+	</td>
+	<td class="span2">
+	  <%= link_to groups_edit => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-pencil hide-text">Edit</i><% end %>
+	  <%= link_to groups_remove => { id => $line{id} } => ( class => "btn btn-mini" ) => begin %><i class="icon-trash hide-text">Remove</i><% end %>
+	</td>
+
+      </tr>
+      <% } %>
+    </table>
+    <% } else { %>
+    <p>No group found</p>
+    <% } %>
+  </div>
+</div>

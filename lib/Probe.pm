@@ -59,6 +59,12 @@ sub startup {
     $ra->route('/users/:id/edit', id => qr/\d+/)   ->to('users#edit')   ->name('users_edit');
     $ra->route('/users/:id/remove', id => qr/\d+/) ->to('users#remove') ->name('users_remove');
 
+    # Group management
+    $ra->route('/groups')                           ->to('groups#list')   ->name('groups_list');
+    $ra->route('/groups/add')                       ->to('groups#add')    ->name('groups_add');
+    $ra->route('/groups/:id/edit', id => qr/\d+/)   ->to('groups#edit')   ->name('groups_edit');
+    $ra->route('/groups/:id/remove', id => qr/\d+/) ->to('groups#remove') ->name('groups_remove');
+
     # Results management
     $ra->route('/results')                           ->to('results#list')   ->name('results_list');
     $ra->route('/results/upload')                    ->to('results#upload') ->name('results_upload');

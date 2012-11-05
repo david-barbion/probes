@@ -1,0 +1,45 @@
+% layout 'default';
+<div class="box">
+  <h2>Edit a group</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to groups_list => (class => "btn") => begin %>Back to list<% end %>
+    <%= link_to groups_add => (class => "btn") => begin %>New group<% end %>
+    <%= link_to groups_remove => { id => $id } => (class => "btn") => begin %>Remove<% end %>
+  </div>
+
+  <div id="form" class="box-content">
+    <%= form_for groups_edit => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+      <legend>Group details</legend>
+
+      <div class="control-group">
+	<label class="control-label" for="name"><strong>Group name:</strong></label>
+	<div class="controls">
+	  <%= text_field 'name', type => 'text', class => 'span6', id => 'name' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label" for="desc">Description:</label>
+	<div class="controls">
+	  <%= text_field 'desc', type => 'text', class => 'span6', id => 'desc' %>
+	</div>
+      </div>
+
+      <div class="control-group">
+	<label class="control-label">Admin privileges:</label>
+	<div class="controls">
+	  <%= select_field 'members' => $users, multiple => 'multiple' %>
+	</div>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+
+    <% end %>
+  </div>
+</div>
