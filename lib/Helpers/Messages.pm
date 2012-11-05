@@ -27,7 +27,7 @@ sub register {
 			 $html .= qq{<button type="button" class="close" data-dismiss="alert">&times;</button>\n};
 			 $html .= qq{<ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{error}});
-			 $html .= qq{</ul>};
+			 $html .= qq{</ul></div>};
 		     }
 
 		     if (@{$self->msg_lists->{info}}) {
@@ -35,7 +35,7 @@ sub register {
 			 $html .= qq{<button type="button" class="close" data-dismiss="alert">&times;</button>\n};
 			 $html .= qq{<ul class="unstyled">\n};
 			 $html .= join("\n", map { "<li>".$_."</li>" } @{$self->msg_lists->{info}});
-			 $html .= qq{</ul>};
+			 $html .= qq{</ul></div>};
 		     }
 
 		     # Empty the message list so that it is displayed only once
