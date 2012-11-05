@@ -318,7 +318,7 @@ WHERE id = ?});
     $self->render();
 }
 
-sub check {
+sub check_auth {
     my $self = shift;
 
     # Make the dispatch continue when the user id is found in the session
@@ -332,6 +332,20 @@ sub check {
 
     return 0;
 
+}
+
+sub check_admin {
+    my $self = shift;
+
+    # Make the dispatch continue only if the user has admin privileges
+    if($self->perm->is_admin) {
+	return 1;
+    }
+
+    # When the user has no privileges, do not redirect, send 401 unauthorized instead
+    $self->render('unauthorized', status => 401);
+
+    return 0;
 }
 
 sub list {

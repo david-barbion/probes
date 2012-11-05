@@ -14,8 +14,15 @@
   <li <% if ($cr eq "results_upload") { %>class="active"<% } %>><%= link_to results_upload => begin %>Upload<% end %></li>
   <li <% if ($cr =~ m!^results_! && $cr ne "results_upload") { %>class="active"<% } %>><%= link_to results_list => begin %>Results<% end %></li>
   <li <% if ($cr =~ m!^reports_!) { %>class="active"<% } %>><%= link_to reports_list => begin %>Reports<% end %></li>
-  <li <% if ($cr =~ m!^probes_!) { %>class="active"<% } %>><%= link_to probes_list => begin %>Probes<% end %></li>
-  <li <% if ($cr =~ m!^graphs_!) { %>class="active"<% } %>><%= link_to graphs_list => begin %>Graphs<% end %></li>
-  <li <% if ($cr =~ m!^users_!) { %>class="active"<% } %>><%= link_to users_list => begin %>Users<% end %></li>
+  <li class="dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+    <ul class="dropdown-menu">
+      <li><%= link_to probes_list => begin %>Probes<% end %></li>
+      <li><%= link_to graphs_list => begin %>Graphs<% end %></li>
+      <li class="divider"></li>
+      <li><%= link_to users_list => begin %>Users<% end %></li>
+      <li><%= link_to groups_list => begin %>Groups<% end %></li>
+    </ul>
+  </li>
   % }
 </ul>
