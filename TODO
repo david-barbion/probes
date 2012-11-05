@@ -34,7 +34,5 @@
 
 ==== users ====
 
-- implement groups
 - implement permissions
 - filter data on the owner and groups
-
