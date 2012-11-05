@@ -5,7 +5,7 @@
 
   <div class="btn-group pull-right">
     <%= link_to users_list => (class => "btn") => begin %>Back to list<% end %>
-    <%= link_to users_show => { id => $id } => (class => "btn") => begin %>Edit<% end %>  
+    <%= link_to users_edit => { id => $id } => (class => "btn") => begin %>Edit<% end %>  
     <%= link_to users_add => (class => "btn") => begin %>New account<% end %>
   </div>
 
@@ -15,7 +15,7 @@
     <%= form_for users_remove => { id => $id } => (method => 'POST', class => 'form-horizontal') => begin %>
     <fieldset>
       <div class="control-group">
-	<label class="control-label">Userame:</label>
+	<label class="control-label">Username:</label>
 	<div class="controls"><p><%= $u{name} %></p></div>
       </div>
       <div class="control-group">
