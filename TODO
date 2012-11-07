@@ -3,6 +3,7 @@
 - add messages where needed
 - add breadcrumbs ? or page tree path ?
 - do not stay on the default bootstrap
+- add links to related stuff everywhere
 
 ==== reports ====
 
@@ -15,6 +16,7 @@
 
 - clone graphs
 - import/export
+- add a page to edit options
 
 ==== probe ====
 

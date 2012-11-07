@@ -71,7 +71,21 @@ ORDER BY t.probe_type, p.probe_name, p.min_version DESC});
 
     $self->stash(probes => $probes);
 
-    # Get the reports XXX
+    # Get the reports
+    $sth = $dbh->prepare(qq{SELECT r.id, r.report_name, r.description
+FROM reports r
+  JOIN report_contents rc ON (r.id = rc.id_report)
+  JOIN graphs g ON (rc.id_graph = g.id)
+WHERE g.id = ?
+ORDER BY r.report_name});
+    $sth->execute($id);
+    my $reports = [ ];
+    while (my ($i, $n, $d) = $sth->fetchrow) {
+	push @{$reports}, { id => $i, name => $n, desc => $d };
+    }
+    $sth->finish;
+
+    $self->stash(reports => $reports);
 
     $dbh->commit;
     $dbh->disconnect;

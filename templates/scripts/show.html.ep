@@ -21,7 +21,7 @@
 
     <h3>Included probes</h3>
     % if (scalar(@probes)) {
-    <table class="table table-condensed table-striped">
+    <table class="table table-hover table-striped">
       <tr>
 	<th>Probe</th>
 	<th>Description</th>

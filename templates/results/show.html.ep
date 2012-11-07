@@ -23,7 +23,7 @@
     <% if (scalar(@probes)) { %>
     <h3>Related Probes</h3>
 
-    <table class="table table-striped table-bordered table-condensed">
+    <table class="table table-striped table-hover">
       <thead>
 	<tr>
 	  <th>Probe</th>

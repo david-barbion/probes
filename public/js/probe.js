@@ -201,7 +201,6 @@
 		      '  <div class="legend"></div>'+
 		      ' </div>'+
 		      '</div>');
-
 	} else {
 	  zone.append('<div  id="'+area_id+'">'+
 		      ' <div class="btn-group pull-right"><a href="#" class="btn btn-mini">Save</a></div>'+
@@ -211,6 +210,14 @@
 		      ' </div>'+
 		      '</div>');
 	}
+      } else {
+	zone.append('<div  id="'+area_id+'">'+
+		      ' <div class="btn-group pull-right"><a href="#" class="btn btn-mini">Save</a></div>'+
+		      ' <div class="graph_container">'+
+		      '  <div class="graph"></div>'+
+		      '  <div class="legend"></div>'+
+		      ' </div>'+
+		      '</div>');
       }
 
       // Remember the container element
@@ -223,6 +230,8 @@
 	} else {
 	  save_link = zone.find('#'+area_id).find('a');
 	}
+      } else {
+	save_link = zone.find('#'+area_id).find('a');
       }
 
       // Prepare an empty list to remember zooms

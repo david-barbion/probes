@@ -19,3 +19,7 @@ create table group_members (
        primary key (id_group, id_user)
 );
 
+-- Path in the archive must be unique in order to select the proper
+-- probe, thus table creation query, when loading the data
+alter table probes add unique (source_path);
+

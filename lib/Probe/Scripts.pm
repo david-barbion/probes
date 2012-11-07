@@ -396,7 +396,7 @@ sub download {
     }
 
     # Get all the probe data and generate the script
-    $sth = $dbh->prepare(qq{SELECT p.probe_name, t.runner_key, p.command, p.min_version, p.max_version,
+    $sth = $dbh->prepare(qq{SELECT p.id, p.probe_name, t.runner_key, p.command, p.min_version, p.max_version,
   p.preload_command, p.source_path
 FROM probes p
   JOIN probe_types t ON (p.probe_type = t.id)
@@ -404,9 +404,9 @@ FROM probes p
 WHERE p.enabled = true AND s.id_script = ?});
     $sth->execute($id);
     my $commands = { };
-    while (my ($n, $t, $c, $iv, $av, $pc, $p) = $sth->fetchrow()) {
+    while (my ($i, $n, $t, $c, $iv, $av, $pc, $p) = $sth->fetchrow()) {
 	$commands->{$t} = [ ] unless exists $commands->{$t};
-	push @{$commands->{$t}}, { id => $id,
+	push @{$commands->{$t}}, { id => $i,
 				   probe => $n,
 				   command => $c,
 				   min_version => $iv,
