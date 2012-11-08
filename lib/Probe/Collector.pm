@@ -117,10 +117,10 @@ sub register_result_set {
     $sth->finish;
 
     if (defined $id_set) {
-	if ($chain <= $meta->{chain}) {
+	if ($chain >= $meta->{chain}) {
 	    # already loaded
 	    $dbh->rollback;
-	    $errstr = "Archive already loaded";
+	    $errstr = "Archive already loaded: $chain $meta->{chain}";
 	    return undef;
 	}
 
