@@ -19,6 +19,7 @@
     <ul class="dropdown-menu">
       <li><%= link_to probes_list => begin %>Probes<% end %></li>
       <li><%= link_to graphs_list => begin %>Graphs<% end %></li>
+      <li><%= link_to graphs_options_list => begin %>Graphs options<% end %></li>
       <li class="divider"></li>
       <li><%= link_to users_list => begin %>Users<% end %></li>
       <li><%= link_to groups_list => begin %>Groups<% end %></li>

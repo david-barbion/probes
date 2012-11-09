@@ -688,4 +688,99 @@ sub data {
     $self->render_json($data);
 }
 
+sub options_list {
+    my $self = shift;
+
+    my $dbh = $self->database;
+    my $sth = $dbh->prepare(qq{SELECT option_name, default_value FROM plot_options});
+    $sth->execute;
+    my $options = { };
+    while (my ($o, $v) = $sth->fetchrow) {
+	$options->{$o} = $v;
+    }
+    $sth->finish;
+
+    $dbh->commit;
+    $dbh->disconnect;
+
+    $self->stash(options => $options);
+
+    $self->render;
+}
+
+sub options_edit {
+    my $self = shift;
+
+    my $method = $self->req->method;
+
+    if ($method =~ m/^POST$/i) {
+        # process the input data
+        my $form_data = $self->req->params->to_hash;
+
+        # Redirect if cancel button has been pressed
+        if (exists $form_data->{cancel}) {
+            return $self->redirect_to('graphs_options_list');
+        }
+
+	my $dbh = $self->database;
+
+	# Get the current values. Checkboxes that are no longer checked
+	# do not appear in the submited data: we need to check if the
+	# corresponding option should be updated
+	my $sth = $dbh->prepare(qq{SELECT option_name, default_value FROM plot_options});
+	$sth->execute;
+	my $options = { };
+	while (my ($o, $v) = $sth->fetchrow) {
+	    $options->{$o} = $v;
+	}
+	$sth->finish;
+
+	my $sth = $dbh->prepare(qq{UPDATE plot_options SET default_value = ? WHERE option_name = ?});
+
+	# Take care of the checkboxes
+	foreach my $opt (qw/stacked filled show-legend/) {
+	    # checkbox goes from 'off' to 'on'
+	    if (exists $form_data->{$opt} && $options->{$opt} eq 'off') {
+		$sth->execute('on', $opt);
+	    }
+
+	    # checkbox goes from 'on' to 'off'
+	    if (! exists $form_data->{$opt} && $options->{$opt} eq 'on') {
+		$sth->execute('off', $opt);
+	    }
+	}
+
+	# Update the other options
+	foreach my $opt (qw/graph-type legend-cols series-width/) {
+	    # Only update if the value has changed
+	    if ($form_data->{$opt} ne $options->{$opt}) {
+		$sth->execute($form_data->{$opt}, $opt);
+	    }
+	}
+
+	$sth->finish;
+	$dbh->commit;
+	$dbh->disconnect;
+
+	return $self->redirect_to('graphs_options_list');
+
+    } else {
+
+	my $dbh = $self->database;
+	my $sth = $dbh->prepare(qq{SELECT option_name, default_value FROM plot_options});
+	$sth->execute;
+	while (my ($o, $v) = $sth->fetchrow) {
+	    # Put each value inside the page parameter, so that values
+	    # are set in the form
+	    $self->param($o, $v);
+	}
+	$sth->finish;
+
+	$dbh->commit;
+	$dbh->disconnect;
+    }
+
+    $self->render;
+}
+
 1;

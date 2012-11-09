@@ -1,0 +1,54 @@
+% layout 'default';
+%# my %o = %{stash 'options'};
+<div class="box">
+  <h2>Default options for graphs</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to graphs_options_list => (class => "btn") => begin %>Back to list<% end %>
+  </div>
+
+  <div class="box-content">
+    <%= form_for graphs_options_edit => (method => 'POST', class => 'form-horizontal') => begin %>
+    <fieldset>
+
+	<div class="control-group">
+	  <label class="control-label">Type:</label>
+	  <div class="controls">
+	    <label class="radio"><%= radio_button 'graph-type' => 'lines', id => 'graph-line' %> Lines</label>
+	    <label class="radio"><%= radio_button 'graph-type' => 'points', id => 'graph-points' %> Points</label>
+	    <label class="radio"><%= radio_button 'graph-type' => 'pie', id => 'graph-pie' %> Pie</label>
+	  </div>
+	</div>
+
+	<div class="control-group">
+	  <label class="control-label">Display:</label>
+	  <div class="controls">
+	    <label class="checkbox"><%= check_box stacked => 'on', id => 'stacked' %> Stacked?</label>
+	    <label class="checkbox"><%= check_box filled => 'on', id => 'filled' %> Filled?</label>
+	    <label class="checkbox"><%= check_box 'show-legend' => 'on', id => 'show-legend' %> Show legend in graph?</label>
+	  </div>
+	</div>
+
+	<div class="control-group">
+	  <label class="control-label" for="series-width">Series width:</label>
+	  <div class="controls">
+	    <%= text_field 'series-width', type => 'text', id => 'series-width', class => 'span1' %>
+	  </div>
+	</div>
+
+	<div class="control-group">
+	  <label class="control-label" for="legend-cols">Legend cols: </label>
+	  <div class="controls">
+	    <%= text_field 'legend-cols', type => 'text', id => 'legend-cols', class => 'span1' %>
+	  </div>
+	</div>
+
+    </fieldset>
+
+    <div class="form-actions">
+      <%= submit_button 'Save', name => 'save', class => 'btn btn-primary' %>
+      <%= submit_button 'Cancel', name => 'cancel', class => 'btn' %>
+    </div>
+    <% end %>
+  </div>
+</div>

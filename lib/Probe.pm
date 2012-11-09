@@ -93,7 +93,9 @@ sub startup {
     $r_adm->route('/graphs/:id', id => qr/\d+/)        ->to('graphs#show')   ->name('graphs_show');
     $r_adm->route('/graphs/:id/edit', id => qr/\d+/)   ->to('graphs#edit')   ->name('graphs_edit');
     $r_adm->route('/graphs/:id/remove', id => qr/\d+/) ->to('graphs#remove') ->name('graphs_remove');
-    $r_auth->route('/graphs/data')   ->via('post')      ->to('graphs#data')   ->name('graphs_data');
+    $r_auth->route('/graphs/data')   ->via('post')     ->to('graphs#data')   ->name('graphs_data');
+    $r_adm->route('/graphs/options')                   ->to('graphs#options_list')->name('graphs_options_list');
+    $r_adm->route('/graphs/options/edit')              ->to('graphs#options_edit')->name('graphs_options_edit');
 
     # Reports
     $r_auth->route('/reports')                           ->to('reports#list')      ->name('reports_list');
