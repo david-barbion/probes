@@ -25,6 +25,7 @@ my @sysstat_dirs = ("/usr/lib/sa", "/usr/lib64/sa", "/usr/lib/sysstat");
 my $sysstat_dir;
 my $sadc_command;
 my $have_sadc = 0;
+my $sadc_num_version;
 
 my $help;
 
@@ -125,14 +126,6 @@ sub sighup {
 }
 
 sub pre_flight {
-    my $basedir = shift;
-
-    # Check if the output directory is writable
-    if (! -w $basedir) {
-	logger "$basedir is not writable, aborting";
-	exit 1;
-    }
-
     # Prepare psql command line
     $psql_command = $psql;
     $psql_command .= " -h $host" if defined $host;
@@ -140,25 +133,56 @@ sub pre_flight {
     $psql_command .= " -U $user" if defined $user;
 
     # Check PostgreSQL version, this is also a connection test
-    my $db = $dbname ||= '';
-    $pg_version = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version_num'" $db`;
-    if ($? >> 8) {
-	logger qq{Could not get version from PostgreSQL};
-	exit 1;
+    if (exists($commands->{sql})) {
+	my $db = $dbname ||= '';
+	$pg_version = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version_num'" $db`;
+	if ($? >> 8) {
+	    logger qq{Could not get version from PostgreSQL};
+	    exit 1;
+	}
+	my $pgv = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version'" $db`;
+	chomp $pgv;
+	logger qq{PostgreSQL server version: $pgv};
     }
 
     # Check for sysstat
-    foreach my $dir (@sysstat_dirs) {
-	if (-x qq{$dir/sadc}) {
-	    logger qq{Found the sysstat data collector: $dir/sadc};
-	    $sadc_command = qq{$dir/sadc -S ALL 1 1 $output_dir/sa};
-	    $have_sadc = 1;
-	    last;
+    if (exists($commands->{sar})) {
+	my $sadc_version;
+	my $sadc_dir;
+	foreach my $dir (@sysstat_dirs) {
+	    if (-x qq{$dir/sadc}) {
+		$sadc_dir = $dir;
+		($sadc_version) = `$dir/sadc -V 2>&1` =~ m!sysstat version ([\d\.]+)!;
+		$sadc_num_version = $sadc_version;
+		$sadc_num_version =~ s!\.!0!g;
+
+		if ($sadc_num_version < 70000) {
+		    logger qq{Unsupported version of sysstat: $sadc_version ($dir/sadc)};
+
+		} elsif ($sadc_num_version >= 70000 && $sadc_num_version < 90000) {
+		    $have_sadc = 1;
+		    # sadc options are the same for version 7 and 8
+		    $sadc_command = qq{$dir/sadc -d -I 1 1};
+
+		} elsif ($sadc_num_version >= 90000) {
+		    # sadc options are the same for version 9 and 10
+		    $have_sadc = 1;
+		    $sadc_command = qq{$dir/sadc -S ALL 1 1};
+
+		}
+
+		# Stop when a working sadc is found
+		last if $have_sadc;
+	    }
+	}
+
+	if ($have_sadc) {
+	    logger qq{Sysstat version $sadc_version ($sadc_dir/sadc)};
+	    logger qq{Collect command set to: $sadc_command <output>/sa};
+	} else {
+	    logger qq{Could not find the sysstat data collector};
 	}
     }
-    unless ($have_sadc) {
-	logger qq{Could not find the sysstat data collector};
-    };
 
 }
 
@@ -183,22 +207,18 @@ EOF
 }
 
 sub run_loop {
-    # Prepare psql command line
-    my $psql_command = $psql;
-    $psql_command .= " -h $host" if defined $host;
-    $psql_command .= " -p $port" if defined $port;
-    $psql_command .= " -U $user" if defined $user;
-
     my $db = $dbname ||= '';
 
     # Run the commands in an infinite loop
     while (1) {
-	open(PSQL, qq{| $psql_command -At -F',' -f - $db});
-	print PSQL $sql, "\n";
-	close(PSQL);
+	if (exists($commands->{sql}) and defined $pg_version) {
+	    open(PSQL, qq{| $psql_command -At -F',' -f - $db});
+	    print PSQL $sql, "\n";
+	    close(PSQL);
+	}
 
 	if (exists($commands->{sar}) and defined($sadc_command)) {
-	    system($sadc_command);
+	    system(qq{$sadc_command $output_dir/sa});
 	}
 
 	sleep($frequency);
@@ -208,10 +228,9 @@ sub run_loop {
 sub setup_probe_run {
 
     # Prepare the output directory
-    my $now = time;
+    my $now = localtime;
+    $now =~ s!\W!_!g; # No spaces and weird chars
     $run_dir = qq{pg_probe_${now}};
-    $run_dir =~ s/\s/_/g;
-    $run_dir =~ s/\W//g;
 
     # Ensure the output dir is absolute
     unless ($base_dir =~ m!^/!) {
@@ -222,8 +241,11 @@ sub setup_probe_run {
     $output_dir = qq{${base_dir}/${run_dir}};
     $logfile = "$output_dir/runner.log";
 
-    # Do the pre-flight check
-    pre_flight($base_dir);
+    # Check if the output directory is writable
+    if (! -w $base_dir) {
+	logger "$base_dir is not writable, aborting";
+	exit 1;
+    }
 
     unless (-d $output_dir) {
 	system("mkdir -p $output_dir");
@@ -321,7 +343,7 @@ sub pack_archive {
 }
 
 sub usage {
-    print qq{usage: $0 [options] {start|stop|pack|rotate|status}
+    print qq{usage: $0 [options] {start|stop|pack|rotate|status|check}
 options:
   -P, --psql=BIN           path to the psql command
   -d, --dbname=DATABASE    connection database
@@ -361,7 +383,7 @@ usage if $help;
 if (defined $ARGV[0]) {
     if ($ARGV[0] ne "start" and $ARGV[0] ne "stop"
 	and $ARGV[0] ne "pack" and $ARGV[0] ne "rotate"
-	and $ARGV[0] ne "status") {
+	and $ARGV[0] ne "status" and $ARGV[0] ne "check") {
 	logger qq{Unknown action};
 	usage;
     }
@@ -372,7 +394,7 @@ if (defined $ARGV[0]) {
 }
 
 # Include given sysstat directory to the default list
-push @sysstat_dirs, $sysstat_dir if defined $sysstat_dir;
+unshift @sysstat_dirs, $sysstat_dir if defined $sysstat_dir;
 
 # Do the work asked
 if ($action eq 'start') {
@@ -382,6 +404,7 @@ if ($action eq 'start') {
 	exit 1;
     }
 
+    pre_flight();
     setup_probe_run();
     gen_sql();
 
@@ -438,4 +461,7 @@ if ($action eq 'start') {
     } else {
 	print qq{Probe is not running. Check pid file and ps\n};
     }
+} elsif ($action eq 'check') {
+    # Do the pre-flight check
+    pre_flight();
 }
