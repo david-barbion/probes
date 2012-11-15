@@ -23,3 +23,6 @@ create table group_members (
 -- probe, thus table creation query, when loading the data
 alter table probes add unique (source_path);
 
+-- Allow to create probes for any versions
+alter table probes alter min_version drop not null;
+

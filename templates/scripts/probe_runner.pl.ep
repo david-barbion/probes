@@ -5,6 +5,7 @@ use warnings;
 
 use POSIX;
 use Getopt::Long qw{ :config bundling no_ignore_case_always no_auto_abbrev};
+use Data::Dumper;
 
 my $action;
 my $foreground = 0;
@@ -194,8 +195,18 @@ sub gen_sql {
 	    foreach my $c (@{$cmds}) {
 
 		# Filter on PostgreSQL versions
+		if (defined $c->{min_version} && $pg_version < to_num_version($c->{min_version})) {
+		    logger qq{Excluded $c->{probe}>=$c->{min_version}};
+		    next;
+		}
 
-		$sql .= <<EOF
+		if (defined $c->{max_version} && $pg_version > to_num_version($c->{max_version})) {
+		    logger  qq{Excluded $c->{probe}<=$c->{max_version}};
+		    next;
+		}
+
+		# Create a SQL script to run everything within one session
+		$sql .= <<EOF;
 -- $c->{probe}
 \\o | (mkdir -p \$(dirname ${output_dir}/$c->{output}) && cat >> ${output_dir}/$c->{output})
 $c->{command};
@@ -300,6 +311,38 @@ sub rotate {
     return $old_dir;
 }
 
+sub to_num_version {
+    my $s = shift;
+
+    chomp $s;
+
+    # Return 0 when the format of the input is not digits separated by
+    # dots
+    return 0 unless $s =~ m!^[\d\.]*$!;
+
+    # One dot at the end is considered .0
+    $s .= "0" if $s =~ m!\.$!;
+
+    # One dot at the beginning is considered 0.
+    $s = "0" . $s if $s =~ m!^\.!;
+
+    # Ensure there only 2 dots in the version
+    if ($s =~ m!^\d+\.\d+$!) {
+	$s .= ".0"; # Append a digit on 2 digits versions
+    } else {
+	$s =~ s!^(\d+\.\d+\.\d+).*!$1!; # Remove extra digits
+    }
+
+    # Transform version into a number
+    my ($x, $y, $z) = split(/\./, $s);
+    $x = 0 if (!defined $x);
+    $y = 0 if (!defined $y);
+    $z = 0 if (!defined $z);
+    my $n = $z + $y * 100 + $x * 10000;
+
+    return $n;
+}
+
 sub pack_archive {
     my $dir = shift;
 
@@ -313,15 +356,31 @@ sub pack_archive {
     }
 
     # Run preload commands for sysstat
-    if (exists $commands->{sar} and -f "$dir/sa") {
-	foreach my $c (@{$commands->{sar}}) {
-	    # prepare output directory for the probe data
-	    system("mkdir -p \$(dirname ${dir}/$c->{output})");
+    if (exists $commands->{sar}) {
+	if (! -f "$dir/sa") {
+	    logger qq{Sysstat binary file not found};
+	} else {
+	    foreach my $c (@{$commands->{sar}}) {
+		# Filter on sysstat versions
+		if (defined $c->{min_version} && $sadc_num_version < to_num_version($c->{min_version})) {
+		    logger qq{Excluded $c->{probe}>=$c->{min_version}};
+		    next;
+		}
 
-	    # run the preload command
-	    my $pc = $c->{preload};
-	    $pc =~ s!\%f!$dir/sa!g;
-	    system("$pc > ${dir}/$c->{output}");
+		if (defined $c->{max_version} && $sadc_num_version > to_num_version($c->{max_version})) {
+		    logger  qq{Excluded $c->{probe}<=$c->{max_version}};
+		    next;
+		}
+
+
+		# prepare output directory for the probe data
+		system("mkdir -p \$(dirname ${dir}/$c->{output})");
+
+		# run the preload command
+		my $pc = $c->{preload};
+		$pc =~ s!\%f!$dir/sa!g;
+		system("$pc > ${dir}/$c->{output}");
+	    }
 	}
     }
 
@@ -430,17 +489,18 @@ if ($action eq 'start') {
     }
 
 } elsif ($action eq 'pack') {
+    pre_flight();
     # Search for dirs in $base_dir matching the run_dir pattern and
     # create a tarball for each of them
     while (my $f = glob("$base_dir/*")) {
 	next if (-f $f);
-	if (-d $f && $f =~ m!/(pg_probe_\d+)$!) {
+	if (-d $f && $f =~ m!/(pg_probe_[\d\w]+)$!) {
 	    # skip already packed dirs
 	    next if (-f "$base_dir/$1.tgz");
 
-	    print "Packing $f: ";
+	    logger "Begin packing $f";
 	    my $tarball = pack_archive($f);
-	    (defined $tarball) ? print "done.\n" : print "failed.\n";
+	    (defined $tarball) ? logger "End (success)" : logger "End (failed)";
 	}
     }
 
