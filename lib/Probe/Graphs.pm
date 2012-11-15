@@ -735,7 +735,7 @@ sub options_edit {
 	}
 	$sth->finish;
 
-	my $sth = $dbh->prepare(qq{UPDATE plot_options SET default_value = ? WHERE option_name = ?});
+	$sth = $dbh->prepare(qq{UPDATE plot_options SET default_value = ? WHERE option_name = ?});
 
 	# Take care of the checkboxes
 	foreach my $opt (qw/stacked filled show-legend/) {
