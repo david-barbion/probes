@@ -1,0 +1,19 @@
+% layout 'default';
+% my %o = %{stash 'options'};
+<div class="box">
+  <h2>Default options for graphs</h2>
+
+  <div class="btn-group pull-right">
+    <%= link_to graphs_options_edit => (class => "btn") => begin %>Edit<% end %>
+  </div>
+
+  <div class="box-content">
+    <table class="table table-desc">
+      <tr><th class="span3">Name</th><th>Value</th></tr>
+      <% foreach my $n (sort keys %o) { %>
+      <tr><td class="span3"><%= $n %></td><td><%= $o{$n} %></td></tr>
+      <% } %>
+    </table>
+  </div>
+</div>
+
