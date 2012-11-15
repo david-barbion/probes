@@ -282,6 +282,7 @@ sub update_counter {
 
     return $rc unless defined $user_id;
 
+    $dbh->do(qq{RESET search_path;});
     my $sth = $dbh->prepare(qq{UPDATE users SET upload_count = upload_count + 1 WHERE id = ?});
     $rc = 1 if defined $sth->execute($user_id);
     $sth->finish;
