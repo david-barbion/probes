@@ -9,6 +9,6 @@ Makefile*
 MANIFEST*
 !MANIFEST.SKIP
 pm_to_blib
-probe.conf
+probes.conf
 log/*
 work
