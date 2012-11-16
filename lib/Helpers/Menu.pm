@@ -1,5 +1,8 @@
 package Helpers::Menu;
 
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream 'b';
 use Data::Dumper;

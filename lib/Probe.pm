@@ -1,4 +1,8 @@
 package Probe;
+
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
 use Mojo::Base 'Mojolicious';
 
 # This method will run once at server start

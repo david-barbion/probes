@@ -1,5 +1,8 @@
 package Probe::Collector;
 
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
 use strict;
 use warnings;
 
