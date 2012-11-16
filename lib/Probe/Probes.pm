@@ -1,6 +1,9 @@
 package Probe::Probes;
-use Mojo::Base 'Mojolicious::Controller';
 
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
+use Mojo::Base 'Mojolicious::Controller';
 use Data::Dumper;
 
 sub list {
@@ -119,10 +122,6 @@ sub add {
             $self->msg->error("Empty target table DDL query");
             $e = 1;
         }
-	if ($form_data->{probe_min_version} eq '') {
-            $self->msg->error("Empty minimum version");
-            $e = 1;
-        }
 	if ($form_data->{source_path} eq '') {
             $self->msg->error("Empty path for input file in archive");
             $e = 1;
@@ -136,7 +135,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id});
 	    $rb = 1 unless defined $sth->execute($form_data->{probe_name},
 						 $form_data->{probe_type},
 						 $form_data->{probe_desc},
-						 $form_data->{probe_min_version},
+						 $form_data->{probe_min_version} ||= undef,
 						 $form_data->{probe_max_version} ||= undef,
 						 $form_data->{probe_query},
 						 $form_data->{preload},
@@ -149,18 +148,18 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id});
 	    $sth->finish;
 
 	    if ($rb) {
-		$self->msg->error("An error occured while saving. Action has been cancelled");
+		if ($dbh->state eq '23505') { # Unique violation contraint on source_path
+		    $self->msg->error("Path is in the archive must be unique. Action has been cancelled");
+		} else {
+		    $self->msg->error("An error occured while saving. Action has been cancelled");
+		}
 		$dbh->rollback;
 	    } else {
+		$self->msg->info("Probe created");
 		$dbh->commit;
+		$dbh->disconnect;
+		return $self->redirect_to('probes_show', id => $id);
 	    }
-	    $dbh->disconnect;
-
-	    # redirect
-	    #my $origin = $self->session->{origin} ||= 'probes_show';
-            #delete $self->session->{origin};
-	    # XXX parameters in session
-            return $self->redirect_to('probes_show', id => $id);
 
 	}
     }
@@ -225,10 +224,6 @@ sub edit {
             $self->msg->error("Empty target table DDL query");
             $e = 1;
         }
-	if ($form_data->{probe_min_version} eq '') {
-            $self->msg->error("Empty minimum version");
-            $e = 1;
-        }
 	if ($form_data->{source_path} eq '') {
             $self->msg->error("Empty path for input file in archive");
             $e = 1;
@@ -243,7 +238,7 @@ WHERE id = ?});
 	    $rb = 1 unless defined $sth->execute($form_data->{probe_name},
 						 $form_data->{probe_type},
 						 $form_data->{probe_desc},
-						 $form_data->{probe_min_version},
+						 $form_data->{probe_min_version} ||= undef,
 						 $form_data->{probe_max_version} ||= undef,
 						 $form_data->{probe_query},
 						 $form_data->{preload},
@@ -254,19 +249,19 @@ WHERE id = ?});
 	    $sth->finish;
 
 	    if ($rb) {
-		$self->msg->error("An error occured while saving. Action has been cancelled");
+		if ($dbh->state eq '23505') { # Unique violation contraint on source_path
+		    $self->msg->error("Path is in the archive must be unique. Action has been cancelled");
+		} else {
+		    $self->msg->error("An error occured while saving. Action has been cancelled");
+		}
 		$dbh->rollback;
 	    } else {
 		$dbh->commit;
+		$dbh->disconnect;
+
+		# redirect
+		return $self->redirect_to('probes_show', id => $id);
 	    }
-	    $dbh->disconnect;
-
-	    # redirect
-	    my $origin = $self->session->{origin} ||= 'probes_show';
-            delete $self->session->{origin};
-	    # XXX parameters in session
-            return $self->redirect_to($origin, id => $id);
-
 	}
     }
 

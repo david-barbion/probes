@@ -34,7 +34,7 @@
       </div>
 
       <div class="control-group">
-	<label class="control-label strong" for="min_version">Minimum version:</label>
+	<label class="control-label" for="min_version">Minimum version:</label>
 	<div class="controls">
 	  <%= text_field 'probe_min_version', type => 'text', id => 'min_version', class => 'span1' %>
 	</div>
@@ -74,7 +74,7 @@
 	<label class="control-label strong" for="path">Path in archive:</label>
 	<div class="controls">
 	  <%= text_field 'source_path', class => 'span6', type => 'text', id => 'path' %>
-	  <p class="help-block">Paths must have a .csv suffix</p>
+	  <p class="help-block">Paths must have a .csv suffix and be unique</p>
 	</div>
       </div>
 

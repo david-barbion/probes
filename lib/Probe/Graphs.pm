@@ -1,6 +1,9 @@
 package Probe::Graphs;
-use Mojo::Base 'Mojolicious::Controller';
 
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
+use Mojo::Base 'Mojolicious::Controller';
 use Data::Dumper;
 
 sub list {
@@ -735,7 +738,7 @@ sub options_edit {
 	}
 	$sth->finish;
 
-	my $sth = $dbh->prepare(qq{UPDATE plot_options SET default_value = ? WHERE option_name = ?});
+	$sth = $dbh->prepare(qq{UPDATE plot_options SET default_value = ? WHERE option_name = ?});
 
 	# Take care of the checkboxes
 	foreach my $opt (qw/stacked filled show-legend/) {

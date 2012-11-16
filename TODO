@@ -4,6 +4,7 @@
 - add breadcrumbs ? or page tree path ?
 - do not stay on the default bootstrap
 - add links to related stuff everywhere
+- add PostgreSQL license
 
 ==== reports ====
 
@@ -11,24 +12,30 @@
 - TOC
 - Order graphs in the page
 - Group graphs by categories (Use tabs ?)
+- Allow a custom filter where possible
 
 ==== graphs ====
 
 - clone graphs
 - import/export
-- add a page to edit options
 
 ==== probe ====
 
 - clone probe
 - remove data and graphs from reports on deletion?
 - import/export
+- create probes for the different versions of sysstat
 
 ==== scripts ====
 
 - limit the time range of output to the run
 - add different modes: cron
 - automatic generation based on versions/type
+- ensure chaining is working as expected
+- better check system() exit status and log messages
+- add a verbose mode
+- log more information
+- store the log file in the db after upload
 
 ==== css ====
 

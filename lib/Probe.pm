@@ -1,4 +1,8 @@
 package Probe;
+
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
 use Mojo::Base 'Mojolicious';
 
 # This method will run once at server start
@@ -12,7 +16,7 @@ sub startup {
     $self->plugin( charset => { charset => 'utf8' } );
 
     # load configuration
-    my $config_file = $self->home.'/probe.conf';
+    my $config_file = $self->home.'/probes.conf';
     my $config = $self->plugin('JSONConfig' => { file => $config_file });
 
     # setup secret passphrase XXX

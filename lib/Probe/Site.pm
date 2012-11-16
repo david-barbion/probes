@@ -1,6 +1,9 @@
 package Probe::Site;
-use Mojo::Base 'Mojolicious::Controller';
 
+# This program is open source, licensed under the PostgreSQL Licence.
+# For license terms, see the LICENSE file.
+
+use Mojo::Base 'Mojolicious::Controller';
 use Data::Dumper;
 use Probe::Collector;
 

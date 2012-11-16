@@ -5,6 +5,7 @@ use warnings;
 
 use POSIX;
 use Getopt::Long qw{ :config bundling no_ignore_case_always no_auto_abbrev};
+use Data::Dumper;
 
 my $action;
 my $foreground = 0;
@@ -25,6 +26,7 @@ my @sysstat_dirs = ("/usr/lib/sa", "/usr/lib64/sa", "/usr/lib/sysstat");
 my $sysstat_dir;
 my $sadc_command;
 my $have_sadc = 0;
+my $sadc_num_version;
 
 my $help;
 
@@ -125,14 +127,6 @@ sub sighup {
 }
 
 sub pre_flight {
-    my $basedir = shift;
-
-    # Check if the output directory is writable
-    if (! -w $basedir) {
-	logger "$basedir is not writable, aborting";
-	exit 1;
-    }
-
     # Prepare psql command line
     $psql_command = $psql;
     $psql_command .= " -h $host" if defined $host;
@@ -140,25 +134,56 @@ sub pre_flight {
     $psql_command .= " -U $user" if defined $user;
 
     # Check PostgreSQL version, this is also a connection test
-    my $db = $dbname ||= '';
-    $pg_version = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version_num'" $db`;
-    if ($? >> 8) {
-	logger qq{Could not get version from PostgreSQL};
-	exit 1;
+    if (exists($commands->{sql})) {
+	my $db = $dbname ||= '';
+	$pg_version = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version_num'" $db`;
+	if ($? >> 8) {
+	    logger qq{Could not get version from PostgreSQL};
+	    exit 1;
+	}
+	my $pgv = `$psql_command -Atc "SELECT setting FROM pg_settings WHERE name = 'server_version'" $db`;
+	chomp $pgv;
+	logger qq{PostgreSQL server version: $pgv};
     }
 
     # Check for sysstat
-    foreach my $dir (@sysstat_dirs) {
-	if (-x qq{$dir/sadc}) {
-	    logger qq{Found the sysstat data collector: $dir/sadc};
-	    $sadc_command = qq{$dir/sadc -S ALL 1 1 $output_dir/sa};
-	    $have_sadc = 1;
-	    last;
+    if (exists($commands->{sar})) {
+	my $sadc_version;
+	my $sadc_dir;
+	foreach my $dir (@sysstat_dirs) {
+	    if (-x qq{$dir/sadc}) {
+		$sadc_dir = $dir;
+		($sadc_version) = `$dir/sadc -V 2>&1` =~ m!sysstat version ([\d\.]+)!;
+		$sadc_num_version = $sadc_version;
+		$sadc_num_version =~ s!\.!0!g;
+
+		if ($sadc_num_version < 70000) {
+		    logger qq{Unsupported version of sysstat: $sadc_version ($dir/sadc)};
+
+		} elsif ($sadc_num_version >= 70000 && $sadc_num_version < 90000) {
+		    $have_sadc = 1;
+		    # sadc options are the same for version 7 and 8
+		    $sadc_command = qq{$dir/sadc -d -I 1 1};
+
+		} elsif ($sadc_num_version >= 90000) {
+		    # sadc options are the same for version 9 and 10
+		    $have_sadc = 1;
+		    $sadc_command = qq{$dir/sadc -S ALL 1 1};
+
+		}
+
+		# Stop when a working sadc is found
+		last if $have_sadc;
+	    }
+	}
+
+	if ($have_sadc) {
+	    logger qq{Sysstat version $sadc_version ($sadc_dir/sadc)};
+	    logger qq{Collect command set to: $sadc_command <output>/sa};
+	} else {
+	    logger qq{Could not find the sysstat data collector};
 	}
     }
-    unless ($have_sadc) {
-	logger qq{Could not find the sysstat data collector};
-    };
 
 }
 
@@ -170,8 +195,18 @@ sub gen_sql {
 	    foreach my $c (@{$cmds}) {
 
 		# Filter on PostgreSQL versions
+		if (defined $c->{min_version} && $pg_version < to_num_version($c->{min_version})) {
+		    logger qq{Excluded $c->{probe}>=$c->{min_version}};
+		    next;
+		}
 
-		$sql .= <<EOF
+		if (defined $c->{max_version} && $pg_version > to_num_version($c->{max_version})) {
+		    logger  qq{Excluded $c->{probe}<=$c->{max_version}};
+		    next;
+		}
+
+		# Create a SQL script to run everything within one session
+		$sql .= <<EOF;
 -- $c->{probe}
 \\o | (mkdir -p \$(dirname ${output_dir}/$c->{output}) && cat >> ${output_dir}/$c->{output})
 $c->{command};
@@ -183,22 +218,18 @@ EOF
 }
 
 sub run_loop {
-    # Prepare psql command line
-    my $psql_command = $psql;
-    $psql_command .= " -h $host" if defined $host;
-    $psql_command .= " -p $port" if defined $port;
-    $psql_command .= " -U $user" if defined $user;
-
     my $db = $dbname ||= '';
 
     # Run the commands in an infinite loop
     while (1) {
-	open(PSQL, qq{| $psql_command -At -F',' -f - $db});
-	print PSQL $sql, "\n";
-	close(PSQL);
+	if (exists($commands->{sql}) and defined $pg_version) {
+	    open(PSQL, qq{| $psql_command -At -F',' -f - $db});
+	    print PSQL $sql, "\n";
+	    close(PSQL);
+	}
 
 	if (exists($commands->{sar}) and defined($sadc_command)) {
-	    system($sadc_command);
+	    system(qq{$sadc_command $output_dir/sa});
 	}
 
 	sleep($frequency);
@@ -208,10 +239,9 @@ sub run_loop {
 sub setup_probe_run {
 
     # Prepare the output directory
-    my $now = time;
+    my $now = localtime;
+    $now =~ s!\W!_!g; # No spaces and weird chars
     $run_dir = qq{pg_probe_${now}};
-    $run_dir =~ s/\s/_/g;
-    $run_dir =~ s/\W//g;
 
     # Ensure the output dir is absolute
     unless ($base_dir =~ m!^/!) {
@@ -222,8 +252,11 @@ sub setup_probe_run {
     $output_dir = qq{${base_dir}/${run_dir}};
     $logfile = "$output_dir/runner.log";
 
-    # Do the pre-flight check
-    pre_flight($base_dir);
+    # Check if the output directory is writable
+    if (! -w $base_dir) {
+	logger "$base_dir is not writable, aborting";
+	exit 1;
+    }
 
     unless (-d $output_dir) {
 	system("mkdir -p $output_dir");
@@ -278,6 +311,38 @@ sub rotate {
     return $old_dir;
 }
 
+sub to_num_version {
+    my $s = shift;
+
+    chomp $s;
+
+    # Return 0 when the format of the input is not digits separated by
+    # dots
+    return 0 unless $s =~ m!^[\d\.]*$!;
+
+    # One dot at the end is considered .0
+    $s .= "0" if $s =~ m!\.$!;
+
+    # One dot at the beginning is considered 0.
+    $s = "0" . $s if $s =~ m!^\.!;
+
+    # Ensure there only 2 dots in the version
+    if ($s =~ m!^\d+\.\d+$!) {
+	$s .= ".0"; # Append a digit on 2 digits versions
+    } else {
+	$s =~ s!^(\d+\.\d+\.\d+).*!$1!; # Remove extra digits
+    }
+
+    # Transform version into a number
+    my ($x, $y, $z) = split(/\./, $s);
+    $x = 0 if (!defined $x);
+    $y = 0 if (!defined $y);
+    $z = 0 if (!defined $z);
+    my $n = $z + $y * 100 + $x * 10000;
+
+    return $n;
+}
+
 sub pack_archive {
     my $dir = shift;
 
@@ -291,15 +356,31 @@ sub pack_archive {
     }
 
     # Run preload commands for sysstat
-    if (exists $commands->{sar} and -f "$dir/sa") {
-	foreach my $c (@{$commands->{sar}}) {
-	    # prepare output directory for the probe data
-	    system("mkdir -p \$(dirname ${dir}/$c->{output})");
+    if (exists $commands->{sar}) {
+	if (! -f "$dir/sa") {
+	    logger qq{Sysstat binary file not found};
+	} else {
+	    foreach my $c (@{$commands->{sar}}) {
+		# Filter on sysstat versions
+		if (defined $c->{min_version} && $sadc_num_version < to_num_version($c->{min_version})) {
+		    logger qq{Excluded $c->{probe}>=$c->{min_version}};
+		    next;
+		}
 
-	    # run the preload command
-	    my $pc = $c->{preload};
-	    $pc =~ s!\%f!$dir/sa!g;
-	    system("$pc > ${dir}/$c->{output}");
+		if (defined $c->{max_version} && $sadc_num_version > to_num_version($c->{max_version})) {
+		    logger  qq{Excluded $c->{probe}<=$c->{max_version}};
+		    next;
+		}
+
+
+		# prepare output directory for the probe data
+		system("mkdir -p \$(dirname ${dir}/$c->{output})");
+
+		# run the preload command
+		my $pc = $c->{preload};
+		$pc =~ s!\%f!$dir/sa!g;
+		system("$pc > ${dir}/$c->{output}");
+	    }
 	}
     }
 
@@ -321,7 +402,7 @@ sub pack_archive {
 }
 
 sub usage {
-    print qq{usage: $0 [options] {start|stop|pack|rotate|status}
+    print qq{usage: $0 [options] {start|stop|pack|rotate|status|check}
 options:
   -P, --psql=BIN           path to the psql command
   -d, --dbname=DATABASE    connection database
@@ -361,7 +442,7 @@ usage if $help;
 if (defined $ARGV[0]) {
     if ($ARGV[0] ne "start" and $ARGV[0] ne "stop"
 	and $ARGV[0] ne "pack" and $ARGV[0] ne "rotate"
-	and $ARGV[0] ne "status") {
+	and $ARGV[0] ne "status" and $ARGV[0] ne "check") {
 	logger qq{Unknown action};
 	usage;
     }
@@ -372,7 +453,7 @@ if (defined $ARGV[0]) {
 }
 
 # Include given sysstat directory to the default list
-push @sysstat_dirs, $sysstat_dir if defined $sysstat_dir;
+unshift @sysstat_dirs, $sysstat_dir if defined $sysstat_dir;
 
 # Do the work asked
 if ($action eq 'start') {
@@ -382,6 +463,7 @@ if ($action eq 'start') {
 	exit 1;
     }
 
+    pre_flight();
     setup_probe_run();
     gen_sql();
 
@@ -407,17 +489,18 @@ if ($action eq 'start') {
     }
 
 } elsif ($action eq 'pack') {
+    pre_flight();
     # Search for dirs in $base_dir matching the run_dir pattern and
     # create a tarball for each of them
     while (my $f = glob("$base_dir/*")) {
 	next if (-f $f);
-	if (-d $f && $f =~ m!/(pg_probe_\d+)$!) {
+	if (-d $f && $f =~ m!/(pg_probe_[\d\w]+)$!) {
 	    # skip already packed dirs
 	    next if (-f "$base_dir/$1.tgz");
 
-	    print "Packing $f: ";
+	    logger "Begin packing $f";
 	    my $tarball = pack_archive($f);
-	    (defined $tarball) ? print "done.\n" : print "failed.\n";
+	    (defined $tarball) ? logger "End (success)" : logger "End (failed)";
 	}
     }
 
@@ -438,4 +521,7 @@ if ($action eq 'start') {
     } else {
 	print qq{Probe is not running. Check pid file and ps\n};
     }
+} elsif ($action eq 'check') {
+    # Do the pre-flight check
+    pre_flight();
 }

@@ -36,7 +36,7 @@
       </div>
 
       <div class="control-group">
-	<label class="control-label strong" for="min_version">Minimum version:</label>
+	<label class="control-label" for="min_version">Minimum version:</label>
 	<div class="controls">
 	  <%= text_field probe_min_version => $p{min_version}, type => 'text', id => 'min_version', class => 'span1' %>
 	</div>
@@ -59,7 +59,7 @@
       <div class="control-group">
 	<label class="control-label" for="preload">Preload command:</label>
 	<div class="controls">
-	  <%= text_area preload => (rows => 5, id => 'preload', class => 'span6') => begin %><% if (defined $p{preload}) { %><%== $p{preload} %><% } %><% end %>
+	  <%= text_area preload => (rows => 5, id => 'preload', class => 'span6 code-font') => begin %><% if (defined $p{preload}) { %><%== $p{preload} %><% } %><% end %>
 	  <p class="help-block">Specify the command to transform the data into CSV suitable for COPY.
 	    The placeholder %f can be used to specify the name of the input file in the command</p>
 	</div>
@@ -68,15 +68,15 @@
       <div class="control-group">
 	<label class="control-label strong" for="ddl">Target table:</label>
 	<div class="controls">
-	  <%= text_area ddl_query => (rows => 5, id => 'ddl', class => 'span6') => begin %><%== $p{ddlq} %><% end %>
+	  <%= text_area ddl_query => (rows => 5, id => 'ddl', class => 'span6 code-font') => begin %><%== $p{ddlq} %><% end %>
 	</div>
       </div>
 
       <div class="control-group">
 	<label class="control-label strong" for="path">Path in archive:</label>
 	<div class="controls">
-	  <%= text_field 'source_path' => $p{path}, type => 'text', id => 'path', class => 'span6' %>
-	  <p class="help-block">Paths must have a .csv suffix</p>
+	  <%= text_field 'source_path' => $p{path}, type => 'text', id => 'path', class => 'span6 code-font' %>
+	  <p class="help-block">Paths must have a .csv suffix and be unique</p>
 	</div>
       </div>
 
