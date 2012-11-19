@@ -35,9 +35,9 @@
 	  relative: true,
 	  trackFormatter: function (coor) {
 	    var d = new Date (parseInt(coor.x));
-	    return '<span style="font-size:0.8em;text-align:center;">'+
-	      d.getDate() +'/'+ (d.getMonth()+1) + '/' + d.getFullYear() +'<br/>'+
-	      d.getHours()+':'+d.getMinutes()+':'+d.getSeconds() + '<br />' + coor.y +
+            // display coordinate information, the date is displayed using operating system, locale and browser time zone configuration.
+	    return '<span style="font-size:0.8em;text-align:center;">'+ coor.series.label + '<br/>' +
+              d.toString() + '<br />' + coor.y +
 	      '</span>';
 	  }
 	}
